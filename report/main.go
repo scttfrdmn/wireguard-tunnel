@@ -45,16 +45,38 @@ func main() {
 	fmt.Println()
 
 	fmt.Println("## Sweep")
-	fmt.Println("| mode | N | Gbps | NVMe GB/s | Gbps/busy-core | sender PPS | busy cores (A/B) | SRD tx pkts | binding limit |")
-	fmt.Println("|------|---|------|-----------|----------------|-----------|------------------|-------------|---------------|")
+	fmt.Println("| mode | N | Gbps | NVMe GB/s | core-equiv (A/B) | Gbps/core | max util (A/B) | SRD tx | binding limit |")
+	fmt.Println("|------|---|------|-----------|------------------|-----------|----------------|--------|---------------|")
 	for _, d := range dps {
 		nvme := "-"
 		if d.NvmeGBs > 0 {
 			nvme = fmt.Sprintf("%.1f", d.NvmeGBs)
 		}
-		fmt.Printf("| %s | %d | %.1f | %s | %.2f | %.0f | %.0f/%.0f | %.0f | %s |\n",
-			d.Mode, d.N, d.Gbps, nvme, d.GbpsPerBusyCore(), d.NodeA.TxPps,
-			d.NodeA.BusyCores, d.NodeB.BusyCores, d.NodeA.SrdTx, dp.Classify(d))
+		fmt.Printf("| %s | %d | %.1f | %s | %.1f/%.1f | %.2f | %.0f/%.0f | %.0f | %s |\n",
+			d.Mode, d.N, d.Gbps, nvme, d.NodeA.BusyCoreEquiv, d.NodeB.BusyCoreEquiv,
+			d.GbpsPerCoreEquiv(), d.NodeA.MaxCoreUtil, d.NodeB.MaxCoreUtil,
+			d.NodeA.SrdTx, dp.Classify(d))
+	}
+
+	// hot-thread attribution: only print if any datapoint captured it (new instrumentation)
+	anyThreads := false
+	for _, d := range dps {
+		if len(d.NodeA.TopThreads) > 0 || len(d.NodeB.TopThreads) > 0 {
+			anyThreads = true
+			break
+		}
+	}
+	if anyThreads {
+		fmt.Println("\n## Hot threads during load (top by %CPU)")
+		fmt.Println("| mode | N | node A (sender/encrypt) | node B (receiver/decrypt) |")
+		fmt.Println("|------|---|-------------------------|---------------------------|")
+		for _, d := range dps {
+			if len(d.NodeA.TopThreads) == 0 && len(d.NodeB.TopThreads) == 0 {
+				continue
+			}
+			fmt.Printf("| %s | %d | %s | %s |\n",
+				d.Mode, d.N, d.NodeA.TopThreadStr(4), d.NodeB.TopThreadStr(4))
+		}
 	}
 
 	// per-mode summary: peak Gbps and first hard-allowance knee
@@ -103,9 +125,11 @@ func writeCSV(path string, dps []dp.Datapoint) error {
 	defer w.Flush()
 
 	header := []string{
-		"mode", "n_tunnels", "wg_mtu", "gbps", "nvme_GBps", "rw", "gbps_per_busy_core", "sender_pps",
-		"busy_cores_a", "busy_cores_b", "max_core_util_a", "max_core_util_b",
-		"softirq_top_share_a", "softirq_top_share_b",
+		"mode", "n_tunnels", "wg_mtu", "gbps", "nvme_GBps", "rw",
+		"gbps_per_core_equiv", "sender_pps",
+		"busy_core_equiv_a", "busy_core_equiv_b", "cores_gt90_a", "cores_gt90_b",
+		"max_core_util_a", "max_core_util_b", "softirq_top_share_a", "softirq_top_share_b",
+		"top_threads_a", "top_threads_b",
 		"bw_out_a", "bw_in_a", "bw_out_b", "bw_in_b", "pps_a", "pps_b",
 		"conntrack_a", "conntrack_b", "srd_tx_a", "srd_tx_b", "binding_limit",
 	}
@@ -114,10 +138,13 @@ func writeCSV(path string, dps []dp.Datapoint) error {
 	}
 	for _, d := range dps {
 		row := []string{
-			d.Mode, itoa(d.N), itoa(d.MTU), ftoa(d.Gbps), ftoa(d.NvmeGBs), d.RW, ftoa(d.GbpsPerBusyCore()), ftoa(d.NodeA.TxPps),
-			ftoa(d.NodeA.BusyCores), ftoa(d.NodeB.BusyCores),
+			d.Mode, itoa(d.N), itoa(d.MTU), ftoa(d.Gbps), ftoa(d.NvmeGBs), d.RW,
+			ftoa(d.GbpsPerCoreEquiv()), ftoa(d.NodeA.TxPps),
+			ftoa(d.NodeA.BusyCoreEquiv), ftoa(d.NodeB.BusyCoreEquiv),
+			ftoa(d.NodeA.CoresGt90), ftoa(d.NodeB.CoresGt90),
 			ftoa(d.NodeA.MaxCoreUtil), ftoa(d.NodeB.MaxCoreUtil),
 			ftoa(d.NodeA.SoftirqTopShare), ftoa(d.NodeB.SoftirqTopShare),
+			d.NodeA.TopThreadStr(4), d.NodeB.TopThreadStr(4),
 			ftoa(d.NodeA.BwOut), ftoa(d.NodeA.BwIn), ftoa(d.NodeB.BwOut), ftoa(d.NodeB.BwIn),
 			ftoa(d.NodeA.Pps), ftoa(d.NodeB.Pps),
 			ftoa(d.NodeA.Conntrack), ftoa(d.NodeB.Conntrack),

@@ -42,10 +42,42 @@ srd_util=$(ena_stat ena_srd_resource_utilization)
 softirq_before=$(awk '/NET_RX/{for(i=2;i<=NF;i++)printf "%s ",$i; print ""}' /proc/softirqs)
 t0=$(date +%s.%N)
 
-# --- CPU over the window ---
+# --- CPU over the window: per-core histogram + thread attribution ---
+# Sample per-thread CPU concurrently with mpstat so we can name *what* pegs a core
+# (ksoftirqd vs wg crypto workqueue vs iperf3 vs fio), not just that one core is at 99%.
+pidlog=""; pidsampler=""
+if command -v pidstat >/dev/null 2>&1; then
+  pidlog=$(mktemp)
+  pint=2; pcnt=$(( DUR / pint )); [ "$pcnt" -lt 1 ] && pcnt=1
+  pidstat -t "$pint" "$pcnt" > "$pidlog" 2>/dev/null &
+  pidsampler=$!
+fi
+
 mp=$(mpstat -P ALL 1 "$DUR" 2>/dev/null || true)
-busy_cores=$(echo "$mp" | awk '/^Average:/ && $2 ~ /^[0-9]+$/ {idle=$NF; if (100-idle>90) c++} END{print c+0}')
-max_busy=$(echo "$mp"  | awk '/^Average:/ && $2 ~ /^[0-9]+$/ {b=100-$NF; if(b>m)m=b} END{printf "%.1f", m+0}')
+[ -n "$pidsampler" ] && { wait "$pidsampler" 2>/dev/null || true; }
+
+# One awk pass over the per-core Average lines: busy core-equivalents (sum of (100-idle)/100,
+# i.e. how many full cores' worth of work), cores over 50/90%, and a util-band histogram.
+read -r busy_core_equiv cores_gt50 cores_gt90 band_0_10 band_10_50 band_50_90 band_90_100 ncores <<EOF
+$(echo "$mp" | awk '/^Average:/ && $2 ~ /^[0-9]+$/ {
+    busy=100-$NF; tot+=busy; n++;
+    if(busy>90){g90++} else if(busy>50){g50++} else if(busy>10){g10++} else {g0++}
+  }
+  END{ printf "%.2f %d %d %d %d %d %d %d\n", tot/100, (g50+g90)+0, g90+0, g0+0, g10+0, g50+0, g90+0, n+0 }')
+EOF
+busy_cores=$cores_gt90   # preserve the original field's meaning (# cores >90% busy)
+max_busy=$(echo "$mp" | awk '/^Average:/ && $2 ~ /^[0-9]+$/ {b=100-$NF; if(b>m)m=b} END{printf "%.1f", m+0}')
+
+# Top threads by %CPU during the window (thread rows in pidstat -t have TGID column "-").
+# This is the field that answers "which single thread is the bottleneck core running".
+top_threads="[]"
+if [ -n "$pidlog" ] && [ -s "$pidlog" ]; then
+  top_threads=$(awk '/^Average:/ && $3=="-" { pct=$(NF-2); comm=$NF; if (pct+0>5) print pct"\t"comm }' "$pidlog" \
+    | sort -rn | head -8 \
+    | awk -F'\t' 'BEGIN{printf "["} {gsub(/[\\"]/,"",$2); printf "%s{\"comm\":\"%s\",\"pct\":%.1f}", (NR>1?",":""), $2, $1} END{printf "]"}')
+  [ -n "$top_threads" ] || top_threads="[]"
+fi
+[ -n "$pidlog" ] && rm -f "$pidlog"
 
 # --- after snapshot ---
 t1=$(date +%s.%N); dt=$(echo "$t1 - $t0" | bc -l)
@@ -77,6 +109,15 @@ cat > "$OUT" <<JSON
   "tx_pps": $(printf '%.0f' "$tx_pps"),
   "busy_cores": $busy_cores,
   "max_core_util": $max_busy,
+  "ncores": ${ncores:-0},
+  "busy_core_equiv": ${busy_core_equiv:-0},
+  "cores_gt50": ${cores_gt50:-0},
+  "cores_gt90": ${cores_gt90:-0},
+  "util_band_0_10": ${band_0_10:-0},
+  "util_band_10_50": ${band_10_50:-0},
+  "util_band_50_90": ${band_50_90:-0},
+  "util_band_90_100": ${band_90_100:-0},
+  "top_threads": ${top_threads:-[]},
   "softirq_rx_top_core_share": $top_share,
   "bw_in_allowance_exceeded": $(d bw_in_allowance_exceeded),
   "bw_out_allowance_exceeded": $(d bw_out_allowance_exceeded),
