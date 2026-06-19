@@ -10,6 +10,12 @@
 # N flows = N RX queues = N crypto pipelines, exactly like the iperf sweep.
 #
 # WARNING: the instance-store devices are exported raw (ephemeral scratch).
+#
+# NUMA selection (for the near:far drive-ratio sweep, see PIPELINING-DESIGN.md):
+#   NVME_NODE=1   export only NIC-local (node 1) drives        — no NUMA hop, shares NIC bus
+#   NVME_NODE=0   export only far (node 0) drives              — extra hop, separate bus
+#   NVME_NODE=    (unset) export all drives (default)
+#   NVME_MAX=K    cap to at most K drives (after node filter)  — to dial exact near:far counts
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
 need nvme; need modprobe
@@ -21,10 +27,20 @@ modprobe nvmet
 modprobe nvmet-tcp
 [ -d "$CFS" ] || die "configfs nvmet not present ($CFS); is the kernel built with NVMe target?"
 
-DEVS=$("$(dirname "$0")/detect-nvme.sh")
-[ -n "$DEVS" ] || die "no instance-store NVMe devices detected"
+# device selection, optionally filtered by NUMA node and capped
+if [ -n "${NVME_NODE:-}" ]; then
+  DEVS=$("$(dirname "$0")/detect-nvme.sh" --node "$NVME_NODE")
+  sel="node $NVME_NODE"
+else
+  DEVS=$("$(dirname "$0")/detect-nvme.sh")
+  sel="all nodes"
+fi
+[ -n "$DEVS" ] || die "no instance-store NVMe devices detected (${sel})"
 mapfile -t DEVARR <<< "$DEVS"
-log "exporting ${#DEVARR[@]} device(s) via nvme-tcp on $N path(s): ${DEVARR[*]}"
+if [ -n "${NVME_MAX:-}" ] && [ "${#DEVARR[@]}" -gt "$NVME_MAX" ]; then
+  DEVARR=("${DEVARR[@]:0:$NVME_MAX}")
+fi
+log "exporting ${#DEVARR[@]} device(s) [${sel}${NVME_MAX:+, cap $NVME_MAX}] via nvme-tcp on $N path(s): ${DEVARR[*]}"
 
 # --- subsystem with one namespace per device (idempotent) ---
 SUB="$CFS/subsystems/$NVME_NQN"
