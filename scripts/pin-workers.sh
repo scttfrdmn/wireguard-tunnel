@@ -16,17 +16,44 @@
 # NOTE: this pins iperf3 servers by their bind port. For the nvme-tcp workload the equivalent
 # worker is the kernel nvmet thread (also not userspace-pinnable); pinning helps the iperf
 # sweep most directly.
+#
+# NUMA: set NODE=<n> to confine workers to one NUMA node's CPUs (from
+# /sys/devices/system/node/node<n>/cpulist). Use this to A/B the two halves of a multi-node
+# instance and discover empirically which node the NIC is local to (run detect-numa.sh first;
+# if it reports nic_numa_node=-1, this sweep is how you find the answer). Unset NODE => the
+# original behaviour: one distinct core per tunnel, round-robin across all cores.
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
 need taskset; need pgrep
 N="${1:?usage: pin-workers.sh <n> [base_core]}"
 BASE="${2:-0}"
 NPROC=$(nproc)
+NODE="${NODE:-}"
+
+# Build the pool of cores to pin onto: either one NUMA node's cpulist, or all cores.
+corepool=()
+if [ -n "$NODE" ]; then
+  cl=$(cat "/sys/devices/system/node/node${NODE}/cpulist" 2>/dev/null || true)
+  [ -n "$cl" ] || die "NODE=$NODE but /sys/devices/system/node/node${NODE}/cpulist is missing"
+  # expand "0-3,8,12-13" into a flat list
+  IFS=',' read -ra parts <<< "$cl"
+  for p in "${parts[@]}"; do
+    if [[ "$p" == *-* ]]; then
+      for c in $(seq "${p%-*}" "${p#*-}"); do corepool+=("$c"); done
+    else
+      corepool+=("$p")
+    fi
+  done
+  log "confining workers to NUMA node $NODE cpus ($cl) — ${#corepool[@]} cores"
+else
+  for c in $(seq 0 $((NPROC-1))); do corepool+=("$c"); done
+fi
+poolsz=${#corepool[@]}
 
 pinned=0; missed=0
 for i in $(seq 0 $((N-1))); do
   port=$((IPERF_BASE_PORT + i))
-  core=$(( (BASE + i) % NPROC ))
+  core=${corepool[$(( (BASE + i) % poolsz ))]}
   # find the iperf3 server PID(s) bound to this port (server-up.sh starts one per port)
   pids=$(pgrep -f "iperf3 -s .* -p $port(\$| )" 2>/dev/null || true)
   [ -n "$pids" ] || pids=$(pgrep -f "iperf3 -s.*-p $port" 2>/dev/null || true)
@@ -36,7 +63,7 @@ for i in $(seq 0 $((N-1))); do
   done
 done
 
-log "pinned $pinned iperf3 worker(s) to cores ${BASE}..$(((BASE+N-1)%NPROC)) (missed $missed)"
+log "pinned $pinned iperf3 worker(s) across $poolsz core(s)${NODE:+ on NUMA node $NODE} (missed $missed)"
 [ "$missed" -eq 0 ] || log "WARN: $missed worker(s) not found — is server-up.sh running with N>=$N?"
 log "note: kernel wg-crypto/ksoftirqd threads are NOT pinned (kernel-controlled); compare a"
-log "      sweep with pinning on vs off to isolate the scheduler-float contribution."
+log "      sweep with pinning on vs off (and NODE=0 vs NODE=1) to isolate placement effects."

@@ -179,6 +179,9 @@ sweep showed, not the disks.
 
 The lever is per-core receive efficiency, now demonstrated by the pinning result:
 
+- **NUMA-aware placement** — if the instance presents >1 NUMA node, pin the decrypt path and
+  workers to the node the ENA NIC is local to, so packets don't cross the interconnect. See
+  the dedicated note below; `detect-numa.sh` + `NODE=<n> pin-workers.sh` test this directly.
 - **Pin the kernel decrypt path too** — RPS/RFS to steer each tunnel's RX to a fixed core,
   XPS for TX, and align the wg-crypt kworker affinity with the RX core (cache-warm decrypt).
 - **Pipeline the stages** (read→encrypt→network→decrypt→write) so a flow's decrypt, TCP
@@ -186,6 +189,24 @@ The lever is per-core receive efficiency, now demonstrated by the pinning result
   note below; this is the most promising untested direction.
 - The network (208 Gbps) and storage (52 GB/s read) have ample headroom; only the
   encrypted-receive CPU pipeline binds.
+
+### Note: NUMA placement (NIC / NVMe affinity)
+
+The +29% from userspace pinning is a cache-locality effect; if `i8ge.48xlarge` presents more
+than one NUMA node, a second, larger placement penalty may be hiding: the receiver's decrypt
+work spread across ~31 cores almost certainly straddles both nodes, while the ENA's DMA/IRQs
+sit on one. Every cross-node packet then pays an interconnect hop. This is **not yet
+measured** — and a guest may not even expose it. `detect-numa.sh` (run automatically by
+`node-setup.sh`, recorded as `results/numa.json`) reports three things from sysfs:
+
+1. **node count** — if 1, the concern is moot and the pinning win was purely intra-node;
+2. **NIC → node** (`/sys/class/net/<if>/device/numa_node`) — may read `-1` in a VM if the
+   hypervisor hides device affinity;
+3. **NVMe → node(s)** — the storage end of the pipeline.
+
+If the NIC node is hidden (`-1`) but there are ≥2 nodes, the empirical fallback is built in:
+`NODE=0 pin-workers.sh` then `NODE=1 pin-workers.sh`, sweep each, and the faster half reveals
+the NIC-local node. Whether this matters here is an open, answerable question for the next run.
 
 ### Note: pipelining the read→encrypt→network→decrypt→write path
 

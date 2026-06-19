@@ -42,6 +42,7 @@ func main() {
 	printCeiling("Raw ENA baseline", "baseline.json")
 	printCeiling("NVMe read/write", "nvme.json")
 	printCeiling("Memory bandwidth", "membw.json")
+	printCeiling("NUMA topology", "numa.json")
 	fmt.Println()
 
 	fmt.Println("## Sweep")

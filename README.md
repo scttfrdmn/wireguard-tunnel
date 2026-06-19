@@ -52,7 +52,8 @@ cd terraform && terraform init && terraform apply
 #    note the outputs: A/B public IPs, private IPs, primary ENI ids
 
 # 1. On BOTH nodes
-sudo ./scripts/node-setup.sh          # kernel check, packages, tuning, jumbo, IRQ pools
+sudo ./scripts/node-setup.sh          # kernel, packages, tuning, jumbo, IRQ pools, NUMA probe
+./scripts/detect-numa.sh              # (also auto-run by node-setup) NIC/NVMe -> NUMA node
 ./scripts/keys-gen.sh a <N_MAX>       # on A: per-tunnel keys -> wg-pub-a.txt   (use 'b' on B)
 #    exchange the two wg-pub-*.txt files (one scp each way)
 ./scripts/mesh-up.sh a <N_MAX> <B_priv_ip> wg-pub-b.txt   # on A
@@ -70,6 +71,8 @@ sudo ./scripts/node-setup.sh          # kernel check, packages, tuning, jumbo, I
 ./scripts/server-up.sh <N_MAX>                          # on B
 # optional: pin each tunnel's worker to a distinct core, to test the crypto ceiling (on B)
 ./scripts/pin-workers.sh <N_MAX>                        # experiment: run sweep with/without
+# NUMA A/B: confine workers to one node's cpus to find/exploit the NIC-local node (on B)
+NODE=0 ./scripts/pin-workers.sh <N_MAX>                 # then NODE=1; compare the two sweeps
 REMOTE_HOST=<B_priv_ip> ./scripts/sweep.sh placement    # then re-run as 'ena_express'
 
 # 4b. Real NVMe->NVMe over nvme-tcp native multipath (confirms the sweep translates to storage)

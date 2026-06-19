@@ -62,4 +62,9 @@ while read -r irq; do
 done < <(grep -i "$PRIMARY_IF" /proc/interrupts | awk -F: '{gsub(/ /,"",$1);print $1}')
 log "pinned $i ENA IRQs across $NCORES cores"
 
+# Record NUMA topology + device affinity once (cheap; informs whether placement must avoid
+# jumping the NUMA complex). Non-fatal if the probe finds nothing.
+log "probing NUMA topology -> $RESULTS_DIR/numa.json"
+"$(dirname "$0")/detect-numa.sh" "$RESULTS_DIR/numa.json" 2>&1 | sed 's/^/  /' || true
+
 log "node-setup complete"
