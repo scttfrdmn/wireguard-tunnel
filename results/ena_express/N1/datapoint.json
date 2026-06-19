@@ -1,0 +1,41 @@
+{
+  "n_tunnels": 1,
+  "mode": "ena_express",
+  "wg_mtu": 8921,
+  "duration_s": 15,
+  "throughput_gbps": 7.893198399020245,
+  "node_a": {
+    "host": "ip-10-10-1-249",
+    "duration_s": 11,
+    "tx_pps": 111801,
+    "busy_cores": 0,
+    "max_core_util": 13.0,
+    "softirq_rx_top_core_share": 0.760,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 12,
+    "ena_srd_rx_pkts": 350208,
+    "ena_srd_eligible_tx_pkts": 1231354,
+    "ena_srd_resource_utilization": 0
+  },
+  "node_b": {
+    "host": "ip-10-10-1-105",
+    "duration_s": 11,
+    "tx_pps": 31734,
+    "busy_cores": 0,
+    "max_core_util": 43.0,
+    "softirq_rx_top_core_share": 0.717,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 349909,
+    "ena_srd_rx_pkts": 1,
+    "ena_srd_eligible_tx_pkts": 349421,
+    "ena_srd_resource_utilization": 0
+  }
+}

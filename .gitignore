@@ -3,9 +3,12 @@ keys/
 wg-pub-*.txt
 
 # --- generated measurement output ---
-results/
-report.md
-report.csv
+# Keep the committed record small: ignore the bulky raw per-flow/fio logs, but DO track the
+# curated deliverables — per-datapoint JSON, ceilings, the report, CSV, and SVGs.
+results/**/flow*.json
+results/**/node_*.json
+results/**/fio.json
+# report.md / report.csv are tracked (the run's headline outputs)
 
 # --- terraform state & local init artifacts (may contain IPs/secrets) ---
 terraform/.terraform/

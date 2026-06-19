@@ -96,3 +96,36 @@ bash -n clean on all 16 scripts. Docs (README/CHANGELOG/CLAUDE) updated.
 - LIVE RUN (GATED on "go ahead, spend"): `terraform apply` (Spot) → run the matrix →
   `report` + `plot` → fold measured numbers into the write-up + commit the SVGs →
   `terraform destroy`. Offline work is complete; the harness is ready.
+
+## 2026-06-19 — Session 2: LIVE RUN (authorized: Spot, us-west-2d)
+
+Dedicated key `wg-saturate` (generated + imported; scofri private key wasn't local).
+2× i8ge.48xlarge Spot in us-west-2d (usw2-az4), ~$2.28/instance-hr. Preflight (read-only,
+free): confirmed offering, AZ, 640 vCPU Spot quota. Operator IP 104.226.178.37/32.
+
+**Six real-hardware bugs found & fixed (all folded back into the repo + CHANGELOG):**
+1. `collect.sh` `read`-without-newline aborted under `set -e` → all node JSON empty, sweep
+   died at N=1. (Highest impact.) Fixed to command substitution.
+2. `/31` tunnel addressing → no inner route (.2 off-subnet); changed to `/30`.
+3. `node-setup.sh` died on missing `awscli` apt package; removed.
+4. `nvme-tcp`/`nvmet-tcp` modules in linux-modules-extra, not base; node-setup installs now.
+5. i8ge ENA driver has per-queue `queue_N_tx_cnt`, no flat `tx_packets`; added `ena_pkts`.
+6. `measure-nvme-tcp.sh` mp-device discovery via sysfs (nvme list -o json lacks SubsystemNQN).
+   Plus: setsid for iperf3 servers; reclaim root-owned results/.
+
+**Measured results (DUR=15):**
+- Ceilings: raw ENA **208 Gbps** / 2.90 Mpps (no WG!), NVMe 52.3 GB/s read / 25.9 write,
+  membw 4885 GB/s.
+- placement sweep: 7.9→15.8→30.9→54.7 (N=1..8, near-linear) → plateau ~57–60 (N=12..32).
+- ena_express: same curve; SRD barely engaged (srd_tx tiny vs eligible) — reported honestly.
+- nvme-tcp: read peak 8.9 GB/s (71 Gbps), tracks the synthetic sweep.
+- **Attribution: plateau is receive-side CPU/crypto (node_b max_core_util 98–99%), NO AWS
+  allowance fired. 100 Gbps NOT reached; bottleneck is crypto, not the 180 Gbps wall.**
+
+Generated report.md/report.csv/throughput.svg/efficiency.svg; filled the write-up with
+measured numbers + honest caveats. **`terraform destroy` complete (9 resources), instances
+gone, project key pair deleted from AWS. Billing stopped.** Total spend: well under $5.
+
+### Next (optional, offline or future live)
+- Stretch: isolate the saturated receive core (ksoftirqd vs worker); RPS/RFS tuning to push
+  past 60 Gbps. eBPF flowlet steerer; MPTCP variant; longer ena_express window for SRD.

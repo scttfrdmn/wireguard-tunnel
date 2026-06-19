@@ -1,0 +1,27 @@
+{
+  "n_tunnels": 16,
+  "mode": "nvme_tcp_placement_read",
+  "wg_mtu": 8921,
+  "duration_s": 15,
+  "throughput_gbps": 71.280850544,
+  "nvme_GBps": 8.910106318,
+  "rw": "read",
+  "node_a": {
+    "host": "ip-10-10-1-249",
+    "duration_s": 11,
+    "tx_pps": 121509,
+    "busy_cores": 1,
+    "max_core_util": 99.0,
+    "softirq_rx_top_core_share": 0.038,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 1349375,
+    "ena_srd_rx_pkts": 74415,
+    "ena_srd_eligible_tx_pkts": 1347496,
+    "ena_srd_resource_utilization": 0
+  },
+  "node_b": null
+}
