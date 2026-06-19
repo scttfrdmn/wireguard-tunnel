@@ -37,8 +37,12 @@ measured cause, not a guess.
 ```
 terraform/   two i8ge.48xlarge, cluster placement group, same AZ, jumbo subnet
 scripts/     composable measurement tools (one job each)
-report/       Go aggregator: per-datapoint JSON -> attribution table (md + csv)
+report/      Go aggregator: per-datapoint JSON -> attribution table (md + csv)
+report/plot/ Go SVG plotter: throughput.svg + efficiency.svg from results/
 ```
+
+The full curve gets folded into [`wireguard-100gbps-writeup.md`](wireguard-100gbps-writeup.md)
+(scaffolded with `_(not yet measured)_` placeholders until a live run fills them).
 
 ## Run order
 
@@ -66,8 +70,14 @@ sudo ./scripts/node-setup.sh          # kernel check, packages, tuning, jumbo, I
 ./scripts/server-up.sh <N_MAX>                          # on B
 REMOTE_HOST=<B_priv_ip> ./scripts/sweep.sh placement    # then re-run as 'ena_express'
 
-# 5. Report  (markdown to stdout; optional CSV as 2nd arg)
+# 4b. Real NVMe->NVMe over nvme-tcp native multipath (confirms the sweep translates to storage)
+sudo REMOTE_HOST=<B_priv_ip> ./scripts/nvme-target-up.sh <N_MAX>   # on B (export instance NVMe)
+sudo REMOTE_HOST=<B_priv_ip> ./scripts/measure-nvme-tcp.sh placement  # on A (read+write sweep)
+sudo ./scripts/nvme-target-down.sh                       # on B when done
+
+# 5. Report + plots  (markdown to stdout; optional CSV as 2nd arg)
 cd report && go run . ../results ../report.csv > ../report.md
+go run ./plot ../results ../                              # writes throughput.svg, efficiency.svg
 ```
 
 ## Cost warning

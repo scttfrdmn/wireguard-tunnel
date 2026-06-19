@@ -49,8 +49,37 @@ and **SemVer 2.0.0 + Keep a Changelog** practices.
 **Validation (all green, offline):** shellcheck -x clean; go build/vet/gofmt clean;
 terraform fmt + validate clean; bash -n clean.
 
-### Next (pending user go-ahead; Phases 2-4 still offline until live run)
-- Phase 2: real NVMe→NVMe over nvme-tcp native multipath; plots from results/.
-- Scaffold `wireguard-100gbps-writeup.md` with explicit "not yet measured" rows.
+## 2026-06-18 — Session 1 (cont.): Phase 2 (offline, no spend)
+
+KICKOFF priorities #2, #3, #4 — all built and offline-validated; none require AWS yet.
+
+**2a — real NVMe→NVMe over nvme-tcp native multipath (#2):**
+- `nvme-target-up.sh` (B): kernel nvmet over nvme-tcp; ONE subsystem ($NVME_NQN) exposes
+  each instance-store device as a namespace, published on N ports (port i bound to tunnel
+  i's B-side IP). `nvme-target-down.sh` tears it down leaf-first (configfs ordering).
+- `measure-nvme-tcp.sh` (A): connects N paths to the subsystem (each pinned to its tunnel's
+  source IP via --host-traddr → distinct 5-tuple), sets round-robin iopolicy so commands
+  spray across tunnels, runs fio read+write, collects both-node attribution, and emits the
+  SAME datapoint.json schema as sweep.sh (+ nvme_GBps/rw) so `report` ingests it unchanged.
+- Added NVME_BASE_PORT / NVME_NQN / nvme_port() to common.sh.
+
+**2b — plots (#3):** `report/plot` (stdlib-only Go SVG) → throughput.svg (Gbps vs N per
+mode, ~180 Gbps wall drawn) + efficiency.svg (Gbps/busy-core vs N). Verified well-formed via
+xmllint.
+
+**2c — write-up scaffold (#4):** `wireguard-100gbps-writeup.md` with thesis, rig, methodology
+and result tables where every measured cell is `_(not yet measured)_` (honoring "never
+fabricate"). Includes the exact commands to fill it from `report/`.
+
+**Refactor:** extracted `report/internal/datapoint` (types, Load, Classify, efficiency
+helpers); `report` and `plot` share it — no duplicated parsing/classify.
+
+**Validation (all green, offline):** go build/vet/gofmt clean across all 3 packages;
+report+plot exercised on multi-mode fixtures (md/csv/nvme-tcp columns/SVG); shellcheck -x +
+bash -n clean on all 16 scripts. Docs (README/CHANGELOG/CLAUDE) updated.
+
+### Next (pending user go-ahead; remaining work)
 - Phase 3: terraform Spot option + written cost estimate.
-- Phase 4 (GATED on "go ahead, spend"): apply → run matrix → fold measured numbers in.
+- Stretch: eBPF tc-bpf flowlet steerer (single-flow case); MPTCP sweep variant.
+- Phase 4 (GATED on "go ahead, spend"): apply → run matrix → fold measured numbers into the
+  write-up + commit the SVGs.

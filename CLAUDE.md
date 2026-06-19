@@ -50,9 +50,13 @@ terraform/   two i8ge.48xlarge, cluster placement group, same AZ, jumbo subnet, 
 scripts/     composable measurement tools (one job each, idempotent):
              common.sh (shared helpers), node-setup, keys-gen, mesh-up/down,
              enable-ena-express, detect-nvme, measure-baseline, measure-nvme,
-             measure-membw, collect, server-up, sweep
+             measure-membw, collect, server-up, sweep,
+             nvme-target-up/down, measure-nvme-tcp (real NVMe→NVMe over nvme-tcp)
 report/      Go: per-datapoint JSON -> attribution table (md + csv)
+report/plot/ Go SVG plotter -> throughput.svg + efficiency.svg
+report/internal/datapoint/  shared types, Load, Classify, efficiency helpers
 results/     (generated) <mode>/N<n>/datapoint.json + baseline/nvme/membw.json
+wireguard-100gbps-writeup.md  the deliverable; measured rows folded in from report/
 ```
 
 ## Run order (operator)
@@ -114,11 +118,13 @@ cd report && go run . ../results > ../report.md
   or money as a blocking question rather than proceeding.
 - Validate everything offline first (shellcheck, go build/vet, terraform validate, dry-runs).
 
-## Offline validation status (2026-06-18, after Phase 0+1)
+## Offline validation status (2026-06-18, after Phase 0+1+2)
 
 - `terraform validate`: PASS. `terraform fmt -check`: clean.
-- `go build`/`go vet`/`gofmt -l`: clean. `report` exercised against synthetic fixtures —
-  markdown + CSV output and both-node classification verified.
+- `go build ./...`/`go vet ./...`/`gofmt -l`: clean across `report`, `report/plot`,
+  `report/internal/datapoint`. `report` + `plot` exercised against multi-mode synthetic
+  fixtures — markdown/CSV, nvme-tcp columns, both-node classification, and well-formed SVG
+  (xmllint) all verified.
 - `shellcheck -x scripts/*.sh`: CLEAN (`.shellcheckrc` sets source-path=SCRIPTDIR).
   `bash -n` on all scripts: clean.
 - Local toolchain: go 1.26.4, terraform 1.15.5, shellcheck present, jq 1.8.1.
@@ -126,11 +132,17 @@ cd report && go run . ../results > ../report.md
 
 ## Open gaps (not yet done — see WORKLOG.md "Next")
 
-- NVMe→NVMe over `nvme-tcp` native multipath (KICKOFF priority #2) — not built yet;
-  `measure-nvme.sh` only measures the local fio ceiling, not an end-to-end transfer.
-- Plots from `results/` (priority #3) — not built.
-- `wireguard-100gbps-writeup.md` (priority #4 target) — **does not exist**; must be
-  scaffolded with explicit "not yet measured" rows before any live run can fill it.
-- Terraform Spot option + a written cost estimate before proposing any spend.
+- Terraform **Spot** option + a written cost estimate before proposing any spend
+  (KICKOFF prefers Spot; current config is on-demand).
+- Stretch / Phase 2 of KICKOFF: eBPF (`tc-bpf`) flowlet steerer for the single-flow case;
+  MPTCP variant of the sweep. Build only after the core matrix has run.
+- The write-up's `_(not yet measured)_` rows + the SVG plots require a **live run** to fill.
 - All live-AWS items remain gated on an explicit "go ahead, spend".
+
+## Done so far (offline)
+
+- Phase 0: hygiene (MIT license, .gitignore, SemVer/Keep-a-Changelog, fmt/vet/shellcheck).
+- Phase 1: both-node remote-collect fix, sweep idempotency, keys-gen role, report CSV.
+- Phase 2: nvme-tcp NVMe→NVMe path (#2), SVG plots (#3), write-up scaffold (#4),
+  shared `datapoint` package.
 ```

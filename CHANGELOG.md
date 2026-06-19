@@ -21,6 +21,19 @@ schema, report columns) may change between minor versions.
   `mesh-up.sh` expects (legacy `<n_max>`-only form still works).
 - `sweep.sh`: live-vs-recorded `wg_mtu` guard, and documentation of the MTU-1500-vs-jumbo
   workflow (re-mesh at `WG_MTU` and label the run).
+- **Real NVMe→NVMe over nvme-tcp** (KICKOFF #2): `nvme-target-up.sh` / `nvme-target-down.sh`
+  (B-side kernel nvmet over nvme-tcp, one port per tunnel against one subsystem) and
+  `measure-nvme-tcp.sh` (A-side: connect N native-multipath paths, round-robin iopolicy,
+  fio read+write sweep, both-node attribution, emits the same `datapoint.json` schema as the
+  iperf sweep). `report` gained `nvme_GBps` + `rw` columns to surface these.
+- **Plots** (KICKOFF #3): `report/plot` — a stdlib-only Go SVG plotter emitting
+  `throughput.svg` (Gbps vs N, per mode, with the ~180 Gbps wall) and `efficiency.svg`
+  (Gbps/busy-core vs N).
+- **Write-up scaffold** (KICKOFF #4): `wireguard-100gbps-writeup.md` — thesis, methodology,
+  and result tables whose every measured cell is an explicit `_(not yet measured)_`
+  placeholder for the live run to fill (nothing fabricated).
+- `report/internal/datapoint`: shared package (types, `Load`, `Classify`, efficiency
+  helpers) used by both `report` and `plot`, removing the duplicated parsing/classify logic.
 
 ### Changed
 - Normalized repo layout: promoted the structured `terraform/ scripts/ report/` tree to
