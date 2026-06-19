@@ -152,6 +152,26 @@ spreading softirq, RPS/RFS tuning, confirming all 32 wg interfaces' RX truly lan
 cores, or offloading the decrypt path. The network and storage both have ample headroom
 (208 Gbps and 52 GB/s); only the encrypted-path CPU work binds.
 
+### Follow-up instrumentation (added after this run; ready for the next)
+
+The first run could see *that* one core pegged at ~99% but not *which thread* or *how many
+cores' worth* of crypto was actually running — `collect.sh` only recorded "cores >90%" (which
+read 0 when work spread thinly) and a single max. That has been addressed:
+
+- **`collect.sh`** now emits a per-core utilisation histogram, **busy core-equivalents**
+  (`sum((100-idle)/100)` = how many full cores' worth of work the binding side spent), and a
+  **`top_threads`** sample (via `pidstat -t`) naming the hottest threads during the window —
+  so a future run will show e.g. `ksoftirqd/NN:99` vs `iperf3:NN` and settle whether the
+  pegged core is softirq/decrypt or userspace receive.
+- **`report`** surfaces `core-equiv (A/B)`, `Gbps/core` (now off core-equivalents, not the
+  noisy >90% count), and a **Hot threads** table.
+- **`pin-workers.sh`** pins each tunnel's iperf3 worker to a distinct core, as an A/B knob to
+  isolate how much of the ceiling is CPU-scheduler float vs raw per-core ChaCha20 throughput.
+
+Re-running the matrix with this instrumentation is a fresh ~$5 Spot session; the open question
+("how many cores decrypt, and is the pegged core softirq or userspace") is then directly
+answered from the data rather than inferred.
+
 ## Reproducing
 
 See `README.md` for the run order and `CLAUDE.md` for ground-truth facts and guardrails.

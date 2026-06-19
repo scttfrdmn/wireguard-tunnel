@@ -10,6 +10,25 @@ schema, report columns) may change between minor versions.
 
 ## [Unreleased]
 
+### Added
+- **CPU instrumentation** to answer "how many cores decrypt, and which thread pegs the
+  bottleneck core" (the open question from the 0.2.0 run):
+  - `collect.sh` now emits a per-core utilisation histogram (`util_band_*`), **busy
+    core-equivalents** (`busy_core_equiv` = sum of (100-idle)/100), `cores_gt50`/`cores_gt90`,
+    and a **`top_threads`** sample from concurrent `pidstat -t` (names ksoftirqd / wg crypto
+    workqueue / iperf3 / fio by %CPU during the window).
+  - `report` shows `core-equiv (A/B)`, `Gbps/core` (now off core-equivalents, not the noisy
+    >90%-count metric), and a new **Hot threads** table; CSV gains the matching columns.
+  - `report/internal/datapoint`: `BusyCoreEquiv()` / `GbpsPerCoreEquiv()` helpers (fall back
+    to the old metric for pre-instrumentation datapoints, which stay parseable).
+- **`pin-workers.sh`**: optional CPU-affinity knob pinning each tunnel's iperf3 worker to a
+  distinct core, to A/B-test how much of the ~60 Gbps ceiling is scheduler float vs raw
+  per-core ChaCha20 throughput.
+
+### Changed
+- Write-up: added a "Follow-up instrumentation" section documenting the above and what the
+  next run will resolve.
+
 ## [0.2.0] - 2026-06-19
 
 First measured run. Harness completed, hardened on real hardware, and exercised end-to-end on

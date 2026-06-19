@@ -68,6 +68,8 @@ sudo ./scripts/node-setup.sh          # kernel check, packages, tuning, jumbo, I
 
 # 4. The sweep (on A; B runs server-up.sh first)
 ./scripts/server-up.sh <N_MAX>                          # on B
+# optional: pin each tunnel's worker to a distinct core, to test the crypto ceiling (on B)
+./scripts/pin-workers.sh <N_MAX>                        # experiment: run sweep with/without
 REMOTE_HOST=<B_priv_ip> ./scripts/sweep.sh placement    # then re-run as 'ena_express'
 
 # 4b. Real NVMe->NVMe over nvme-tcp native multipath (confirms the sweep translates to storage)
