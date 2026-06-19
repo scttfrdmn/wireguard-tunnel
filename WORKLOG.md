@@ -78,8 +78,21 @@ helpers); `report` and `plot` share it — no duplicated parsing/classify.
 report+plot exercised on multi-mode fixtures (md/csv/nvme-tcp columns/SVG); shellcheck -x +
 bash -n clean on all 16 scripts. Docs (README/CHANGELOG/CLAUDE) updated.
 
+## 2026-06-18 — Session 1 (cont.): Phase 3 (offline, no spend)
+
+- Terraform: added `use_spot` (default **true**, per KICKOFF), `max_spot_price`,
+  `root_volume_size` vars; conditional `instance_market_options` spot block (one-time,
+  terminate-on-interruption, max_price→null when uncapped); `pricing_mode` output.
+  `terraform fmt`+`validate` clean.
+- **COSTS.md** grounded in LIVE AWS prices (read-only API calls cost nothing): On-Demand
+  **$22.7808/instance-hr** (Pricing API) ⇒ **$45.56/hr** for the rig; Spot **$7.20** us-east-1a,
+  down to **$2.28** us-west-2d (Spot history, 2026-06-18). gp3 $0.08/GB-mo ⇒ EBS negligible.
+  Per-session scenarios (2–4h), Spot-vs-OD trade-off, capacity caveat, re-check commands.
+- Confirmed local `aws` CLI has active creds; used it only for read-only price queries.
+- Docs wired: README cost section, CHANGELOG, CLAUDE.md.
+
 ### Next (pending user go-ahead; remaining work)
-- Phase 3: terraform Spot option + written cost estimate.
 - Stretch: eBPF tc-bpf flowlet steerer (single-flow case); MPTCP sweep variant.
-- Phase 4 (GATED on "go ahead, spend"): apply → run matrix → fold measured numbers into the
-  write-up + commit the SVGs.
+- LIVE RUN (GATED on "go ahead, spend"): `terraform apply` (Spot) → run the matrix →
+  `report` + `plot` → fold measured numbers into the write-up + commit the SVGs →
+  `terraform destroy`. Offline work is complete; the harness is ready.

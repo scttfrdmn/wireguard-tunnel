@@ -111,12 +111,15 @@ cd report && go run . ../results > ../report.md
 
 ## Cost & safety guardrails (HARD)
 
-- Two `i8ge.48xlarge` on-demand is **hundreds of USD/hour**. **NEVER** `terraform apply`,
-  launch instances, enable ENA Express via AWS API, or otherwise spend money without an
-  explicit "go ahead, spend" from the user in the current session. Estimate cost first.
-- Prefer Spot. Always `terraform destroy` at session end. Surface anything needing live AWS
-  or money as a blocking question rather than proceeding.
+- Two `i8ge.48xlarge` is **~$45.56/hr On-Demand**, **~$4.56–14.41/hr Spot** (live rates
+  2026-06-18; full model in `COSTS.md`). **NEVER** `terraform apply`, launch instances,
+  enable ENA Express via AWS API, or otherwise spend money without an explicit "go ahead,
+  spend" from the user in the current session.
+- Terraform defaults to **Spot** (`use_spot=true`). Always `terraform destroy` at session
+  end. Surface anything needing live AWS or money as a blocking question.
 - Validate everything offline first (shellcheck, go build/vet, terraform validate, dry-runs).
+  NOTE: read-only AWS calls (Pricing API, `describe-spot-price-history`, `describe-*`) cost
+  nothing and are fine for offline validation — only `apply`/launch/modify spend or change.
 
 ## Offline validation status (2026-06-18, after Phase 0+1+2)
 
@@ -132,12 +135,11 @@ cd report && go run . ../results > ../report.md
 
 ## Open gaps (not yet done — see WORKLOG.md "Next")
 
-- Terraform **Spot** option + a written cost estimate before proposing any spend
-  (KICKOFF prefers Spot; current config is on-demand).
 - Stretch / Phase 2 of KICKOFF: eBPF (`tc-bpf`) flowlet steerer for the single-flow case;
   MPTCP variant of the sweep. Build only after the core matrix has run.
 - The write-up's `_(not yet measured)_` rows + the SVG plots require a **live run** to fill.
-- All live-AWS items remain gated on an explicit "go ahead, spend".
+- All live-AWS items remain gated on an explicit "go ahead, spend". **The harness is now
+  offline-complete and ready for a live run pending that go-ahead.**
 
 ## Done so far (offline)
 
@@ -145,4 +147,5 @@ cd report && go run . ../results > ../report.md
 - Phase 1: both-node remote-collect fix, sweep idempotency, keys-gen role, report CSV.
 - Phase 2: nvme-tcp NVMe→NVMe path (#2), SVG plots (#3), write-up scaffold (#4),
   shared `datapoint` package.
+- Phase 3: Terraform Spot option (default) + `COSTS.md` grounded in live AWS prices.
 ```

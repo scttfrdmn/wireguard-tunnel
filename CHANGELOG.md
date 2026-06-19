@@ -34,6 +34,12 @@ schema, report columns) may change between minor versions.
   placeholder for the live run to fill (nothing fabricated).
 - `report/internal/datapoint`: shared package (types, `Load`, `Classify`, efficiency
   helpers) used by both `report` and `plot`, removing the duplicated parsing/classify logic.
+- **Spot support** (KICKOFF "prefer Spot"): `terraform` `use_spot` (default `true`),
+  `max_spot_price`, and `root_volume_size` variables; a conditional `instance_market_options`
+  spot block (one-time, terminate-on-interruption); and a `pricing_mode` output.
+- **`COSTS.md`**: written cost model grounded in live AWS prices fetched 2026-06-18 —
+  On-Demand $22.78/instance-hr ($45.56/hr for the rig) vs Spot $2.28–8.40/instance-hr —
+  with per-session scenarios, EBS/transfer notes, and re-check commands.
 
 ### Changed
 - Normalized repo layout: promoted the structured `terraform/ scripts/ report/` tree to

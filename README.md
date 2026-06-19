@@ -82,8 +82,13 @@ go run ./plot ../results ../                              # writes throughput.sv
 
 ## Cost warning
 
-Two `i8ge.48xlarge` on-demand is **expensive** (~hundreds of USD/hour combined). Use Spot
-where possible, run the matrix in one session, and `terraform destroy` immediately after.
+Two `i8ge.48xlarge` is **expensive**: ~**$45.56/hour** combined On-Demand, or ~**$4.56–14.41/hour**
+on Spot (live rates, 2026-06-18 — see [`COSTS.md`](COSTS.md) for the full model and how to
+re-check). The Terraform defaults to **Spot** (`use_spot = true`); set `use_spot = false` for
+On-Demand if an interruption mid-run would be unacceptable. Run the matrix in one session and
+`terraform destroy` immediately after — idle nodes bill at the same rate.
+
+**No `apply` / no spend without an explicit go-ahead.** Validate offline first.
 
 ## Assumptions
 
