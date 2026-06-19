@@ -15,12 +15,17 @@ schema, report columns) may change between minor versions.
   cpulists, and NIC/NVMe → node from sysfs. Auto-run by `node-setup.sh` → `results/numa.json`;
   surfaced in the report's Ceilings. `pin-workers.sh` gained a `NODE=<n>` knob to confine
   workers to one node's cpus.
-- **NUMA A/B measured result (run 3).** `i8ge.48xlarge` = **2 NUMA nodes** (0:0-95, 1:96-191),
-  ENA NIC on **node 1** (exposed, not hidden). Counterintuitive finding: pinning userspace
-  receivers to the **NIC-remote** node 0 hit **75.7 Gbps** vs **56.3** on the NIC-local node 1
-  at N=32 — because the kernel RX/softirq/`wg-crypt` path already occupies the NIC-local node,
-  so co-locating userspace there causes contention. Best practice (now in the script verdict):
-  split the pipeline across nodes — kernel decrypt on the NIC-local node, userspace off it.
+- **NUMA A/B measured result (run 3) + a confound it exposed.** `i8ge.48xlarge` = **2 NUMA
+  nodes** (0:0-95, 1:96-191), ENA NIC on **node 1** (exposed in-guest, not hidden). A/B at
+  N=32: userspace receivers on node 0 hit **75.7 Gbps** vs **56.3** on node 1. BUT
+  `node-setup.sh` was pinning the ENA RX IRQs to cores 0–31 (all node 0, NIC-*remote*) — its
+  round-robin was NUMA-blind. So the A/B actually measured "userspace co-located with the
+  RX-softirq cores" (node 0, won) vs "userspace split from softirq across the complex" (node 1,
+  lost) — **not** NIC-local vs NIC-remote. Honest lesson: co-locate userspace receive with the
+  RX-softirq cores; the true NIC-local-everything layout is still untested.
+- **Fixed `node-setup.sh` NUMA-blind IRQ pinning.** ENA RX IRQs now pin to the NIC-local
+  node's cpulist by default (from sysfs), with an `IRQ_CORES=` override — so the next run can
+  test the textbook layout (IRQs/NAPI/decrypt + userspace all on the NIC-local node).
 - **Run 2 measured results (instrumented + pinning A/B).** Resolved the 0.2.0 open question:
   the receiver spends **~57 core-equivalents across ~31 cores** at N=32 (not one pegged core);
   hot threads are `napi/wgN-0` + `kworker/*-wg-crypt-wgN` + `ksoftirqd/*` + `iperf3`. Pinning

@@ -50,17 +50,35 @@ for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do echo performa
 log "hugepages (8 GiB of 2M pages for mover buffers)"
 echo 4096 > /proc/sys/vm/nr_hugepages 2>/dev/null || true
 
-# IRQ pinning: stop irqbalance, pin ENA queue IRQs across cores round-robin.
+# IRQ pinning: stop irqbalance, pin ENA queue IRQs round-robin onto a chosen core pool.
+# By default the pool is the NIC's *local* NUMA node (so RX softirq/NAPI touches NIC-local
+# memory) — this is the textbook layout and was NOT what the original code did: it pinned
+# IRQs to cores 0..N-1, which on a 2-node box lands them all on node 0 even when the NIC is
+# on node 1. Override with IRQ_CORES="a-b,c" to force a specific pool (e.g. for an A/B test).
 log "pinning ENA IRQs (irqbalance off)"
 systemctl stop irqbalance 2>/dev/null || true
-NCORES=$(nproc)
+NIC_NODE=$(cat "/sys/class/net/$PRIMARY_IF/device/numa_node" 2>/dev/null || echo -1)
+if [ -n "${IRQ_CORES:-}" ]; then
+  irq_cpulist="$IRQ_CORES"; src="IRQ_CORES override"
+elif [ "$NIC_NODE" != "-1" ] && [ -r "/sys/devices/system/node/node${NIC_NODE}/cpulist" ]; then
+  irq_cpulist=$(cat "/sys/devices/system/node/node${NIC_NODE}/cpulist"); src="NIC-local node $NIC_NODE"
+else
+  irq_cpulist="0-$(($(nproc)-1))"; src="all cores (NIC node unknown)"
+fi
+# expand "96-127,160" -> flat array
+irqpool=()
+IFS=',' read -ra _parts <<< "$irq_cpulist"
+for _p in "${_parts[@]}"; do
+  if [[ "$_p" == *-* ]]; then for _c in $(seq "${_p%-*}" "${_p#*-}"); do irqpool+=("$_c"); done
+  else irqpool+=("$_p"); fi
+done
 i=0
 while read -r irq; do
-  cpu=$(( i % NCORES ))
+  cpu=${irqpool[$(( i % ${#irqpool[@]} ))]}
   echo "$cpu" > "/proc/irq/$irq/smp_affinity_list" 2>/dev/null || true
   i=$((i+1))
 done < <(grep -i "$PRIMARY_IF" /proc/interrupts | awk -F: '{gsub(/ /,"",$1);print $1}')
-log "pinned $i ENA IRQs across $NCORES cores"
+log "pinned $i ENA IRQs across ${#irqpool[@]} cores ($src: $irq_cpulist)"
 
 # Record NUMA topology + device affinity once (cheap; informs whether placement must avoid
 # jumping the NUMA complex). Non-fatal if the probe finds nothing.
