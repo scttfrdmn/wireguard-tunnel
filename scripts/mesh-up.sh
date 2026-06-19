@@ -20,7 +20,9 @@ for i in $(seq 0 $((N-1))); do
   ip link add "$dev" type wireguard
   wg set "$dev" listen-port "$port" private-key "$KEYDIR/priv$i"
   wg set "$dev" peer "$peerpub" endpoint "${PEER_IP}:${port}" allowed-ips "${peerip}/32" persistent-keepalive 15
-  ip addr add "${selfip}/31" dev "$dev"
+  # /30 (covers .0-.3) so the .1 and .2 endpoints share a subnet and can route to each other;
+  # a /31 at .1 spans only .0-.1, leaving .2 off-subnet (no inner route).
+  ip addr add "${selfip}/30" dev "$dev"
   ip link set "$dev" mtu "$WG_MTU" up
 done
 log "brought up $N tunnels ($ROLE side); peer endpoint $PEER_IP"

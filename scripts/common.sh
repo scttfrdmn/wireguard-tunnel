@@ -4,7 +4,7 @@ set -euo pipefail
 
 # --- tunable config ---
 BASE_PORT="${BASE_PORT:-51820}"        # wg listen port for tunnel 0
-TUN_NET="${TUN_NET:-10.200}"           # /31 per tunnel: 10.200.<i>.1 <-> .2
+TUN_NET="${TUN_NET:-10.200}"           # /30 per tunnel: 10.200.<i>.1 <-> .2
 WG_MTU="${WG_MTU:-8921}"               # 9001 ENA MTU - 80B headroom
 IPERF_BASE_PORT="${IPERF_BASE_PORT:-5201}"
 NVME_BASE_PORT="${NVME_BASE_PORT:-4420}"               # nvme-tcp svc port for tunnel 0
@@ -31,4 +31,18 @@ ena_stats() {
 }
 ena_stat() { ena_stats | awk -v k="$1" '$1==k{print $2; f=1} END{if(!f)print 0}'; }
 
-mkdir -p "$RESULTS_DIR"
+# Total tx/rx packets. Some ENA drivers expose a flat tx_packets/rx_packets; others (e.g.
+# the i8ge driver) expose only per-queue queue_<n>_tx_cnt/rx_cnt. Use the flat counter when
+# present, else sum the per-queue counters. $1 = tx|rx
+ena_pkts() {
+  local flat; flat=$(ena_stat "${1}_packets")
+  if [ "${flat:-0}" != 0 ]; then echo "$flat"; return; fi
+  ena_stats | awk -v d="$1" '$1 ~ ("^queue_[0-9]+_" d "_cnt$"){s+=$2} END{print s+0}'
+}
+
+# Create results dir; if a prior sudo run left it root-owned, hand it back to the invoking
+# user so non-sudo measure scripts can still write their JSON.
+mkdir -p "$RESULTS_DIR" 2>/dev/null || sudo mkdir -p "$RESULTS_DIR"
+if [ ! -w "$RESULTS_DIR" ]; then
+  sudo chown -R "$(id -u):$(id -g)" "$RESULTS_DIR" 2>/dev/null || true
+fi

@@ -24,11 +24,18 @@ REMOTE_HOST="${REMOTE_HOST:?set REMOTE_HOST to B private ip}"
 SSH="ssh -o StrictHostKeyChecking=no ubuntu@${REMOTE_HOST}"
 SDIR="$(cd "$(dirname "$0")" && pwd)"
 
-# nvme multipath devices for our subsystem = the namespace block devs (not the per-path ctrls)
+# nvme multipath devices for our subsystem = the namespace block devs (not the per-path ctrls).
+# Read from sysfs: nvme-cli's `nvme list -o json` schema varies by version and doesn't reliably
+# expose SubsystemNQN at the top level, but the kernel always lists the subsystem's namespace
+# block devices under /sys/class/nvme-subsystem/<s>/ when subsysnqn matches.
 mp_devices() {
-  nvme list -o json 2>/dev/null \
-    | jq -r --arg nqn "$NVME_NQN" \
-        '.Devices[] | select(.SubsystemNQN==$nqn) | .DevicePath' 2>/dev/null | sort -u
+  local s
+  for s in /sys/class/nvme-subsystem/nvme-subsys*; do
+    [ -e "$s/subsysnqn" ] || continue
+    if grep -qxF "$NVME_NQN" "$s/subsysnqn" 2>/dev/null; then
+      find "$s" -maxdepth 1 -name 'nvme*n*' -printf '/dev/%f\n' 2>/dev/null
+    fi
+  done | sort -u
 }
 
 disconnect_all() { nvme disconnect -n "$NVME_NQN" >/dev/null 2>&1 || true; }

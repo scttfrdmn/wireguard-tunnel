@@ -19,13 +19,21 @@ ena_stats() {
     | awk -F: 'NF==2{gsub(/ /,"",$1);gsub(/ /,"",$2); if ($2 ~ /^[0-9]+$/) print $1" "$2}'
 }
 ena_stat() { ena_stats | awk -v k="$1" '$1==k{print $2; f=1} END{if(!f)print 0}'; }
+# total tx/rx packets: flat counter if present, else sum per-queue queue_<n>_<tx|rx>_cnt
+ena_pkts() {
+  local flat; flat=$(ena_stat "${1}_packets")
+  if [ "${flat:-0}" != 0 ]; then echo "$flat"; return; fi
+  ena_stats | awk -v d="$1" '$1 ~ ("^queue_[0-9]+_" d "_cnt$"){s+=$2} END{print s+0}'
+}
 
 need ethtool; need mpstat
 DUR="${1:-20}"; OUT="${2:-/dev/stdout}"
 
 # --- before snapshot ---
 declare -A B
-for k in tx_packets rx_packets bw_in_allowance_exceeded bw_out_allowance_exceeded \
+B[tx_packets]=$(ena_pkts tx)
+B[rx_packets]=$(ena_pkts rx)
+for k in bw_in_allowance_exceeded bw_out_allowance_exceeded \
          pps_allowance_exceeded conntrack_allowance_exceeded linklocal_allowance_exceeded \
          ena_srd_tx_pkts ena_srd_rx_pkts ena_srd_eligible_tx_pkts; do
   B[$k]=$(ena_stat "$k")
@@ -42,11 +50,18 @@ max_busy=$(echo "$mp"  | awk '/^Average:/ && $2 ~ /^[0-9]+$/ {b=100-$NF; if(b>m)
 # --- after snapshot ---
 t1=$(date +%s.%N); dt=$(echo "$t1 - $t0" | bc -l)
 declare -A A
-for k in "${!B[@]}"; do A[$k]=$(ena_stat "$k"); done
+A[tx_packets]=$(ena_pkts tx)
+A[rx_packets]=$(ena_pkts rx)
+for k in "${!B[@]}"; do
+  case "$k" in tx_packets|rx_packets) continue;; esac
+  A[$k]=$(ena_stat "$k")
+done
 softirq_after=$(awk '/NET_RX/{for(i=2;i<=NF;i++)printf "%s ",$i; print ""}' /proc/softirqs)
 
-# softirq concentration: top core's share of total NET_RX delta
-read -r top_share < <(paste -d' ' <(echo "$softirq_before") <(echo "$softirq_after") | awk '{
+# softirq concentration: top core's share of total NET_RX delta.
+# NB: command substitution (not `read`) — awk's printf emits no trailing newline, so a
+# `read` here returns non-zero at EOF and aborts the script under `set -e`.
+top_share=$(paste -d' ' <(echo "$softirq_before") <(echo "$softirq_after") | awk '{
   half=NF/2; tot=0; top=0;
   for(i=1;i<=half;i++){d=$(i+half)-$i; if(d<0)d=0; tot+=d; if(d>top)top=d}
   if(tot>0) printf "%.3f", top/tot; else printf "0"

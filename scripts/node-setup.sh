@@ -8,9 +8,18 @@ source "$(dirname "$0")/common.sh"
 log "installing packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
+# NB: no awscli here — Ubuntu 24.04 has no 'awscli' apt package, and the nodes don't need it
+# (ENA Express is toggled from the operator host via enable-ena-express.sh).
 apt-get install -y -qq wireguard-tools iperf3 fio ethtool sysstat jq \
-  linux-tools-common "linux-tools-$(uname -r)" build-essential nvme-cli awscli \
+  linux-tools-common "linux-tools-$(uname -r)" build-essential nvme-cli \
   numactl irqbalance >/dev/null
+
+# nvme-tcp (initiator) and nvmet-tcp (target) live in linux-modules-extra on the AWS kernel,
+# not the base image — needed for the NVMe->NVMe over nvme-tcp test (measure-nvme-tcp.sh).
+log "ensuring nvme-tcp / nvmet-tcp kernel modules"
+apt-get install -y -qq "linux-modules-extra-$(uname -r)" >/dev/null 2>&1 || true
+modprobe nvme-tcp  2>/dev/null || log "WARN: nvme-tcp module unavailable (nvme-tcp test will not run)"
+modprobe nvmet-tcp 2>/dev/null || log "WARN: nvmet-tcp module unavailable (nvme-tcp target will not run)"
 
 log "kernel: $(uname -r)  — in-tree wireguard present: $(modinfo wireguard >/dev/null 2>&1 && echo yes || echo NO)"
 modinfo wireguard >/dev/null 2>&1 || die "kernel wireguard module missing; need 5.6+ (6.x recommended)"
