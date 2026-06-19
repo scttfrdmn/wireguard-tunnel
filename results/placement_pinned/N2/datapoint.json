@@ -1,17 +1,17 @@
 {
   "n_tunnels": 2,
-  "mode": "ena_express",
+  "mode": "placement_pinned",
   "wg_mtu": 8921,
   "duration_s": 20,
-  "throughput_gbps": 15.690157867483308,
+  "throughput_gbps": 15.635766193842116,
   "node_a": {
     "host": "ip-10-10-1-55",
     "duration_s": 16,
-    "tx_pps": 222229,
+    "tx_pps": 221011,
     "busy_cores": 0,
-    "max_core_util": 22.6,
+    "max_core_util": 22.4,
     "ncores": 192,
-    "busy_core_equiv": 3.73,
+    "busy_core_equiv": 3.81,
     "cores_gt50": 0,
     "cores_gt90": 0,
     "util_band_0_10": 188,
@@ -20,106 +20,102 @@
     "util_band_90_100": 0,
     "top_threads": [
       {
+        "comm": "|__iperf3",
+        "pct": 20.3
+      },
+      {
         "comm": "|__napi/wg1-0",
-        "pct": 22.9
+        "pct": 19.3
       },
       {
         "comm": "|__napi/wg0-0",
-        "pct": 15.4
+        "pct": 19.2
       },
       {
         "comm": "|__iperf3",
-        "pct": 15.3
-      },
-      {
-        "comm": "|__iperf3",
-        "pct": 14.6
+        "pct": 16.0
       },
       {
         "comm": "|__pidstat",
-        "pct": 9.6
+        "pct": 9.3
       },
       {
-        "comm": "|__kworker/2:3-wg-crypt-wg1",
-        "pct": 8.3
+        "comm": "|__kworker/2:0-wg-crypt-wg1",
+        "pct": 6.6
       },
       {
-        "comm": "|__kworker/2:1-wg-crypt-wg0",
-        "pct": 7.3
-      },
-      {
-        "comm": "|__kworker/1:3-wg-crypt-wg0",
-        "pct": 6.0
+        "comm": "|__kworker/1:2-wg-crypt-wg1",
+        "pct": 6.3
       }
     ],
-    "softirq_rx_top_core_share": 0.384,
+    "softirq_rx_top_core_share": 0.382,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
     "conntrack_allowance_exceeded": 0,
     "linklocal_allowance_exceeded": 0,
-    "ena_srd_tx_pkts": 42,
-    "ena_srd_rx_pkts": 984130,
-    "ena_srd_eligible_tx_pkts": 3650042,
+    "ena_srd_tx_pkts": 50,
+    "ena_srd_rx_pkts": 838740,
+    "ena_srd_eligible_tx_pkts": 3627708,
     "ena_srd_resource_utilization": 0
   },
   "node_b": {
     "host": "ip-10-10-1-15",
     "duration_s": 16,
-    "tx_pps": 59820,
+    "tx_pps": 51033,
     "busy_cores": 0,
-    "max_core_util": 78.3,
+    "max_core_util": 79.6,
     "ncores": 192,
-    "busy_core_equiv": 6.98,
-    "cores_gt50": 1,
+    "busy_core_equiv": 7.22,
+    "cores_gt50": 4,
     "cores_gt90": 0,
-    "util_band_0_10": 187,
-    "util_band_10_50": 4,
-    "util_band_50_90": 1,
+    "util_band_0_10": 186,
+    "util_band_10_50": 2,
+    "util_band_50_90": 4,
     "util_band_90_100": 0,
     "top_threads": [
       {
         "comm": "|__iperf3",
-        "pct": 36.0
+        "pct": 45.8
       },
       {
         "comm": "|__iperf3",
-        "pct": 35.7
-      },
-      {
-        "comm": "|__napi/wg0-0",
-        "pct": 32.8
+        "pct": 34.8
       },
       {
         "comm": "|__napi/wg1-0",
-        "pct": 31.7
+        "pct": 32.6
       },
       {
-        "comm": "|__kworker/2:5-wg-crypt-wg0",
-        "pct": 19.0
+        "comm": "|__napi/wg0-0",
+        "pct": 30.4
       },
       {
-        "comm": "|__kworker/2:2-wg-crypt-wg0",
-        "pct": 16.5
+        "comm": "|__kworker/2:5-wg-crypt-wg1",
+        "pct": 21.0
+      },
+      {
+        "comm": "|__kworker/2:3-wg-crypt-wg0",
+        "pct": 18.1
       },
       {
         "comm": "|__kworker/2:1-wg-crypt-wg0",
-        "pct": 15.8
+        "pct": 16.9
       },
       {
-        "comm": "|__kworker/2:3-wg-crypt-wg1",
-        "pct": 13.0
+        "comm": "|__kworker/2:0-wg-crypt-wg1",
+        "pct": 15.0
       }
     ],
-    "softirq_rx_top_core_share": 0.435,
+    "softirq_rx_top_core_share": 0.451,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
     "conntrack_allowance_exceeded": 0,
     "linklocal_allowance_exceeded": 0,
-    "ena_srd_tx_pkts": 986159,
-    "ena_srd_rx_pkts": 31,
-    "ena_srd_eligible_tx_pkts": 985285,
+    "ena_srd_tx_pkts": 842726,
+    "ena_srd_rx_pkts": 39,
+    "ena_srd_eligible_tx_pkts": 841989,
     "ena_srd_resource_utilization": 0
   }
 }

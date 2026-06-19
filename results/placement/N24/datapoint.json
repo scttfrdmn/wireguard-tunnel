@@ -2,15 +2,57 @@
   "n_tunnels": 24,
   "mode": "placement",
   "wg_mtu": 8921,
-  "duration_s": 15,
-  "throughput_gbps": 57.872088004347255,
+  "duration_s": 20,
+  "throughput_gbps": 55.79952606161291,
   "node_a": {
-    "host": "ip-10-10-1-249",
-    "duration_s": 11,
-    "tx_pps": 813065,
+    "host": "ip-10-10-1-55",
+    "duration_s": 16,
+    "tx_pps": 778897,
     "busy_cores": 0,
-    "max_core_util": 12.4,
-    "softirq_rx_top_core_share": 0.076,
+    "max_core_util": 16.5,
+    "ncores": 192,
+    "busy_core_equiv": 13.95,
+    "cores_gt50": 0,
+    "cores_gt90": 0,
+    "util_band_0_10": 172,
+    "util_band_10_50": 20,
+    "util_band_50_90": 0,
+    "util_band_90_100": 0,
+    "top_threads": [
+      {
+        "comm": "|__napi/wg22-0",
+        "pct": 11.3
+      },
+      {
+        "comm": "|__napi/wg16-0",
+        "pct": 10.7
+      },
+      {
+        "comm": "|__pidstat",
+        "pct": 10.3
+      },
+      {
+        "comm": "|__napi/wg12-0",
+        "pct": 9.1
+      },
+      {
+        "comm": "|__napi/wg10-0",
+        "pct": 8.8
+      },
+      {
+        "comm": "|__napi/wg5-0",
+        "pct": 8.1
+      },
+      {
+        "comm": "|__napi/wg20-0",
+        "pct": 7.9
+      },
+      {
+        "comm": "|__napi/wg17-0",
+        "pct": 7.9
+      }
+    ],
+    "softirq_rx_top_core_share": 0.086,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
@@ -22,12 +64,54 @@
     "ena_srd_resource_utilization": 0
   },
   "node_b": {
-    "host": "ip-10-10-1-105",
-    "duration_s": 11,
-    "tx_pps": 80941,
+    "host": "ip-10-10-1-15",
+    "duration_s": 16,
+    "tx_pps": 24576,
     "busy_cores": 1,
     "max_core_util": 100.0,
-    "softirq_rx_top_core_share": 0.080,
+    "ncores": 192,
+    "busy_core_equiv": 51.13,
+    "cores_gt50": 20,
+    "cores_gt90": 1,
+    "util_band_0_10": 0,
+    "util_band_10_50": 172,
+    "util_band_50_90": 19,
+    "util_band_90_100": 1,
+    "top_threads": [
+      {
+        "comm": "|__kworker/1:5-wg-crypt-wg17",
+        "pct": 10.0
+      },
+      {
+        "comm": "|__kworker/9:2-wg-crypt-wg10",
+        "pct": 9.2
+      },
+      {
+        "comm": "|__kworker/2:2-mm_percpu_wq",
+        "pct": 9.0
+      },
+      {
+        "comm": "|__kworker/18:5-mm_percpu_wq",
+        "pct": 8.5
+      },
+      {
+        "comm": "|__kworker/25:0-wg-crypt-wg21",
+        "pct": 8.4
+      },
+      {
+        "comm": "|__kworker/15:5-wg-crypt-wg18",
+        "pct": 8.4
+      },
+      {
+        "comm": "|__kworker/4:2-wg-crypt-wg17",
+        "pct": 8.3
+      },
+      {
+        "comm": "|__kworker/7:0-wg-crypt-wg6",
+        "pct": 7.9
+      }
+    ],
+    "softirq_rx_top_core_share": 0.054,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,

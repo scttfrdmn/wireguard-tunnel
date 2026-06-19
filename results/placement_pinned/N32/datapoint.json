@@ -1,125 +1,125 @@
 {
   "n_tunnels": 32,
-  "mode": "placement",
+  "mode": "placement_pinned",
   "wg_mtu": 8921,
   "duration_s": 20,
-  "throughput_gbps": 59.941748242939475,
+  "throughput_gbps": 77.2037484005453,
   "node_a": {
     "host": "ip-10-10-1-55",
     "duration_s": 16,
-    "tx_pps": 841903,
+    "tx_pps": 1076417,
     "busy_cores": 0,
-    "max_core_util": 18.0,
+    "max_core_util": 24.1,
     "ncores": 192,
-    "busy_core_equiv": 14.98,
+    "busy_core_equiv": 20.28,
     "cores_gt50": 0,
     "cores_gt90": 0,
-    "util_band_0_10": 171,
-    "util_band_10_50": 21,
+    "util_band_0_10": 123,
+    "util_band_10_50": 69,
     "util_band_50_90": 0,
     "util_band_90_100": 0,
     "top_threads": [
       {
-        "comm": "|__pidstat",
-        "pct": 10.3
+        "comm": "|__napi/wg2-0",
+        "pct": 16.3
       },
       {
         "comm": "|__napi/wg31-0",
-        "pct": 6.7
+        "pct": 14.6
       },
       {
-        "comm": "|__napi/wg20-0",
-        "pct": 6.2
+        "comm": "|__napi/wg1-0",
+        "pct": 14.5
       },
       {
-        "comm": "|__napi/wg3-0",
-        "pct": 6.0
+        "comm": "|__napi/wg25-0",
+        "pct": 12.4
       },
       {
-        "comm": "|__napi/wg28-0",
-        "pct": 6.0
+        "comm": "|__napi/wg12-0",
+        "pct": 12.2
       },
       {
-        "comm": "|__napi/wg24-0",
-        "pct": 5.8
+        "comm": "|__napi/wg13-0",
+        "pct": 11.3
       },
       {
-        "comm": "|__napi/wg29-0",
-        "pct": 5.8
+        "comm": "|__iperf3",
+        "pct": 11.2
       },
       {
-        "comm": "|__napi/wg8-0",
-        "pct": 5.7
+        "comm": "|__pidstat",
+        "pct": 11.0
       }
     ],
-    "softirq_rx_top_core_share": 0.085,
+    "softirq_rx_top_core_share": 0.068,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
     "conntrack_allowance_exceeded": 0,
     "linklocal_allowance_exceeded": 0,
-    "ena_srd_tx_pkts": 0,
-    "ena_srd_rx_pkts": 0,
-    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_tx_pkts": 452,
+    "ena_srd_rx_pkts": 1293615,
+    "ena_srd_eligible_tx_pkts": 17768764,
     "ena_srd_resource_utilization": 0
   },
   "node_b": {
     "host": "ip-10-10-1-15",
     "duration_s": 16,
-    "tx_pps": 49625,
-    "busy_cores": 1,
-    "max_core_util": 98.9,
+    "tx_pps": 77942,
+    "busy_cores": 2,
+    "max_core_util": 99.7,
     "ncores": 192,
-    "busy_core_equiv": 57.49,
-    "cores_gt50": 31,
-    "cores_gt90": 1,
+    "busy_core_equiv": 57.08,
+    "cores_gt50": 32,
+    "cores_gt90": 2,
     "util_band_0_10": 0,
-    "util_band_10_50": 161,
+    "util_band_10_50": 160,
     "util_band_50_90": 30,
-    "util_band_90_100": 1,
+    "util_band_90_100": 2,
     "top_threads": [
       {
         "comm": "|__iperf3",
-        "pct": 63.8
+        "pct": 52.9
       },
       {
         "comm": "|__iperf3",
-        "pct": 57.9
+        "pct": 39.3
       },
       {
         "comm": "|__iperf3",
-        "pct": 51.7
+        "pct": 39.2
       },
       {
         "comm": "|__iperf3",
-        "pct": 51.7
+        "pct": 37.8
       },
       {
         "comm": "|__iperf3",
-        "pct": 50.3
+        "pct": 36.9
       },
       {
         "comm": "|__iperf3",
-        "pct": 48.7
+        "pct": 35.1
       },
       {
         "comm": "|__iperf3",
-        "pct": 48.7
+        "pct": 35.1
       },
       {
         "comm": "|__iperf3",
-        "pct": 48.3
+        "pct": 34.6
       }
     ],
-    "softirq_rx_top_core_share": 0.054,
+    "softirq_rx_top_core_share": 0.074,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
     "conntrack_allowance_exceeded": 0,
     "linklocal_allowance_exceeded": 0,
-    "ena_srd_tx_pkts": 0,
-    "ena_srd_rx_pkts": 0,
-    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_tx_pkts": 1298472,
+    "ena_srd_rx_pkts": 456,
+    "ena_srd_eligible_tx_pkts": 1297120,
     "ena_srd_resource_utilization": 0
   }
 }

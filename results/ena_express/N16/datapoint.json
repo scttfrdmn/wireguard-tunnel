@@ -2,40 +2,124 @@
   "n_tunnels": 16,
   "mode": "ena_express",
   "wg_mtu": 8921,
-  "duration_s": 15,
-  "throughput_gbps": 55.893400837559156,
+  "duration_s": 20,
+  "throughput_gbps": 55.51973916693539,
   "node_a": {
-    "host": "ip-10-10-1-249",
-    "duration_s": 11,
-    "tx_pps": 793769,
+    "host": "ip-10-10-1-55",
+    "duration_s": 16,
+    "tx_pps": 781421,
     "busy_cores": 0,
-    "max_core_util": 13.6,
-    "softirq_rx_top_core_share": 0.075,
+    "max_core_util": 20.3,
+    "ncores": 192,
+    "busy_core_equiv": 14.21,
+    "cores_gt50": 0,
+    "cores_gt90": 0,
+    "util_band_0_10": 174,
+    "util_band_10_50": 18,
+    "util_band_50_90": 0,
+    "util_band_90_100": 0,
+    "top_threads": [
+      {
+        "comm": "|__napi/wg10-0",
+        "pct": 16.8
+      },
+      {
+        "comm": "|__napi/wg5-0",
+        "pct": 16.3
+      },
+      {
+        "comm": "|__napi/wg12-0",
+        "pct": 15.1
+      },
+      {
+        "comm": "|__napi/wg15-0",
+        "pct": 15.0
+      },
+      {
+        "comm": "|__napi/wg11-0",
+        "pct": 12.9
+      },
+      {
+        "comm": "|__napi/wg1-0",
+        "pct": 12.4
+      },
+      {
+        "comm": "|__napi/wg14-0",
+        "pct": 12.2
+      },
+      {
+        "comm": "|__napi/wg7-0",
+        "pct": 12.1
+      }
+    ],
+    "softirq_rx_top_core_share": 0.089,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
     "conntrack_allowance_exceeded": 0,
     "linklocal_allowance_exceeded": 0,
-    "ena_srd_tx_pkts": 19,
-    "ena_srd_rx_pkts": 1401482,
-    "ena_srd_eligible_tx_pkts": 8743654,
+    "ena_srd_tx_pkts": 12627,
+    "ena_srd_rx_pkts": 793907,
+    "ena_srd_eligible_tx_pkts": 12851151,
     "ena_srd_resource_utilization": 0
   },
   "node_b": {
-    "host": "ip-10-10-1-105",
-    "duration_s": 11,
-    "tx_pps": 127056,
+    "host": "ip-10-10-1-15",
+    "duration_s": 16,
+    "tx_pps": 29178,
     "busy_cores": 1,
-    "max_core_util": 98.9,
-    "softirq_rx_top_core_share": 0.110,
+    "max_core_util": 100.0,
+    "ncores": 192,
+    "busy_core_equiv": 42.51,
+    "cores_gt50": 16,
+    "cores_gt90": 1,
+    "util_band_0_10": 0,
+    "util_band_10_50": 176,
+    "util_band_50_90": 15,
+    "util_band_90_100": 1,
+    "top_threads": [
+      {
+        "comm": "|__ksoftirqd/1",
+        "pct": 6.7
+      },
+      {
+        "comm": "|__ksoftirqd/25",
+        "pct": 6.4
+      },
+      {
+        "comm": "|__ksoftirqd/5",
+        "pct": 6.0
+      },
+      {
+        "comm": "|__ksoftirqd/20",
+        "pct": 6.0
+      },
+      {
+        "comm": "|__ksoftirqd/15",
+        "pct": 6.0
+      },
+      {
+        "comm": "|__pidstat",
+        "pct": 5.8
+      },
+      {
+        "comm": "|__ksoftirqd/7",
+        "pct": 5.7
+      },
+      {
+        "comm": "|__ksoftirqd/31",
+        "pct": 5.7
+      }
+    ],
+    "softirq_rx_top_core_share": 0.069,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
     "conntrack_allowance_exceeded": 0,
     "linklocal_allowance_exceeded": 0,
-    "ena_srd_tx_pkts": 1401427,
-    "ena_srd_rx_pkts": 11,
-    "ena_srd_eligible_tx_pkts": 1399797,
+    "ena_srd_tx_pkts": 848207,
+    "ena_srd_rx_pkts": 13579,
+    "ena_srd_eligible_tx_pkts": 847558,
     "ena_srd_resource_utilization": 0
   }
 }

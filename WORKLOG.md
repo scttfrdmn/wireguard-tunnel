@@ -129,3 +129,36 @@ gone, project key pair deleted from AWS. Billing stopped.** Total spend: well un
 ### Next (optional, offline or future live)
 - Stretch: isolate the saturated receive core (ksoftirqd vs worker); RPS/RFS tuning to push
   past 60 Gbps. eBPF flowlet steerer; MPTCP variant; longer ena_express window for SRD.
+
+## 2026-06-19 — Session 3: instrumentation + Spot run 2 (us-west-2d)
+
+Used **`truffle spot`** (spore.host CLI) for the cost preflight — confirmed us-west-2d still
+$2.2781/instance-hr (90% off), cleaner than raw describe-spot-price-history. spore.host is a
+catalog of streamable research-viz apps (ChimeraX/ParaView/QGIS/etc.); truffle is its EC2
+discovery CLI.
+
+Built CPU instrumentation first (offline, committed): collect.sh per-core histogram +
+busy_core_equiv + pidstat top_threads; report core-equiv/Gbps-per-core + Hot threads table;
+pin-workers.sh affinity knob. Then ran it live.
+
+Run 2 (key re-imported, operator IP updated to 137.99.223.75, all 6 prior fixes held — clean
+setup on first try; nvme-tcp modules + pidstat present):
+- placement: 7.9/15.7/29.1/48.0/56.0/55.3/55.8/59.9 (N=1..32) — same ~60 plateau.
+- **Instrumentation ANSWERS the open question:** receiver at N=32 = ~57 core-equivalents
+  across ~31 cores >50% (NOT one pegged core). Hot threads: napi/wgN-0 + kworker wg-crypt-wgN
+  + ksoftirqd + iperf3. Receiver costs ~4x sender (57 vs 15 coreEq). Per-core efficiency
+  DEGRADES with N: 2.53→1.04 Gbps/coreEq.
+- **PINNING A/B (the headline):** placement_pinned 42.2/58.6/69.2/**77.2** at N=8/16/24/32 —
+  +29% at N=32, same ~57 coreEq, efficiency 1.04→1.35 Gbps/core. Confirms the ceiling is
+  CPU placement / cache locality, not a hard wall. Best result yet: 77 Gbps.
+- ena_express: same as placement; SRD still barely engaged.
+- Skipped nvme-tcp re-run (have it from run 1; saved spend).
+
+Pulled results (24 datapoints), regenerated report/CSV/SVGs, rewrote write-up with both runs +
+the pinning table + an honest "pinning was userspace-only" caveat + the pipelining note.
+**terraform destroy complete (9 resources, []), key pair deleted. Billing stopped.** ~25 min, <$5.
+
+### Next
+- User idea to pursue: **pipeline read|encrypt|network|decrypt|write across cores** (top
+  follow-up; recorded in the write-up). Also: pin the kernel decrypt path (RPS/RFS/XPS +
+  wg-crypt kworker affinity), pinned ena_express run, finer N grid.

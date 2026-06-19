@@ -1,125 +1,125 @@
 {
-  "n_tunnels": 8,
-  "mode": "ena_express",
+  "n_tunnels": 16,
+  "mode": "placement_pinned",
   "wg_mtu": 8921,
   "duration_s": 20,
-  "throughput_gbps": 45.53991077309886,
+  "throughput_gbps": 58.62494699461073,
   "node_a": {
     "host": "ip-10-10-1-55",
     "duration_s": 16,
-    "tx_pps": 645572,
+    "tx_pps": 821400,
     "busy_cores": 0,
-    "max_core_util": 25.7,
+    "max_core_util": 28.4,
     "ncores": 192,
-    "busy_core_equiv": 12.13,
+    "busy_core_equiv": 15.42,
     "cores_gt50": 0,
     "cores_gt90": 0,
-    "util_band_0_10": 183,
-    "util_band_10_50": 9,
+    "util_band_0_10": 175,
+    "util_band_10_50": 17,
     "util_band_50_90": 0,
     "util_band_90_100": 0,
     "top_threads": [
       {
-        "comm": "|__napi/wg4-0",
-        "pct": 27.9
-      },
-      {
-        "comm": "|__napi/wg7-0",
-        "pct": 27.4
-      },
-      {
-        "comm": "|__napi/wg2-0",
+        "comm": "|__napi/wg12-0",
         "pct": 26.7
       },
       {
-        "comm": "|__napi/wg5-0",
-        "pct": 26.4
+        "comm": "|__napi/wg11-0",
+        "pct": 24.3
+      },
+      {
+        "comm": "|__napi/wg2-0",
+        "pct": 22.6
+      },
+      {
+        "comm": "|__napi/wg13-0",
+        "pct": 21.4
       },
       {
         "comm": "|__napi/wg1-0",
-        "pct": 21.6
+        "pct": 21.4
+      },
+      {
+        "comm": "|__napi/wg6-0",
+        "pct": 20.9
       },
       {
         "comm": "|__iperf3",
-        "pct": 19.2
+        "pct": 17.1
       },
       {
         "comm": "|__iperf3",
-        "pct": 18.7
-      },
-      {
-        "comm": "|__iperf3",
-        "pct": 18.1
+        "pct": 15.1
       }
     ],
-    "softirq_rx_top_core_share": 0.138,
+    "softirq_rx_top_core_share": 0.098,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
     "conntrack_allowance_exceeded": 0,
     "linklocal_allowance_exceeded": 0,
-    "ena_srd_tx_pkts": 51,
-    "ena_srd_rx_pkts": 2139365,
-    "ena_srd_eligible_tx_pkts": 10612267,
+    "ena_srd_tx_pkts": 643,
+    "ena_srd_rx_pkts": 1590105,
+    "ena_srd_eligible_tx_pkts": 13523010,
     "ena_srd_resource_utilization": 0
   },
   "node_b": {
     "host": "ip-10-10-1-15",
     "duration_s": 16,
-    "tx_pps": 129359,
-    "busy_cores": 0,
-    "max_core_util": 85.5,
+    "tx_pps": 96568,
+    "busy_cores": 3,
+    "max_core_util": 99.2,
     "ncores": 192,
-    "busy_core_equiv": 24.88,
-    "cores_gt50": 7,
-    "cores_gt90": 0,
-    "util_band_0_10": 82,
-    "util_band_10_50": 103,
-    "util_band_50_90": 7,
-    "util_band_90_100": 0,
+    "busy_core_equiv": 33.70,
+    "cores_gt50": 14,
+    "cores_gt90": 3,
+    "util_band_0_10": 0,
+    "util_band_10_50": 178,
+    "util_band_50_90": 11,
+    "util_band_90_100": 3,
     "top_threads": [
       {
         "comm": "|__iperf3",
-        "pct": 44.5
+        "pct": 38.9
       },
       {
         "comm": "|__iperf3",
-        "pct": 44.4
+        "pct": 34.6
       },
       {
         "comm": "|__iperf3",
-        "pct": 43.8
+        "pct": 33.7
       },
       {
         "comm": "|__iperf3",
-        "pct": 43.7
+        "pct": 33.1
       },
       {
         "comm": "|__iperf3",
-        "pct": 36.3
+        "pct": 32.6
       },
       {
-        "comm": "|__napi/wg2-0",
+        "comm": "|__iperf3",
+        "pct": 29.8
+      },
+      {
+        "comm": "|__ksoftirqd/0",
+        "pct": 29.4
+      },
+      {
+        "comm": "|__iperf3",
         "pct": 29.3
-      },
-      {
-        "comm": "|__napi/wg7-0",
-        "pct": 28.0
-      },
-      {
-        "comm": "|__napi/wg5-0",
-        "pct": 28.0
       }
     ],
-    "softirq_rx_top_core_share": 0.149,
+    "softirq_rx_top_core_share": 0.102,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
     "conntrack_allowance_exceeded": 0,
     "linklocal_allowance_exceeded": 0,
-    "ena_srd_tx_pkts": 2150637,
-    "ena_srd_rx_pkts": 41,
-    "ena_srd_eligible_tx_pkts": 2148771,
+    "ena_srd_tx_pkts": 1601185,
+    "ena_srd_rx_pkts": 629,
+    "ena_srd_eligible_tx_pkts": 1599916,
     "ena_srd_resource_utilization": 0
   }
 }

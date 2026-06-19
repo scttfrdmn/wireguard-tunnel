@@ -11,6 +11,12 @@ schema, report columns) may change between minor versions.
 ## [Unreleased]
 
 ### Added
+- **Run 2 measured results (instrumented + pinning A/B).** Resolved the 0.2.0 open question:
+  the receiver spends **~57 core-equivalents across ~31 cores** at N=32 (not one pegged core);
+  hot threads are `napi/wgN-0` + `kworker/*-wg-crypt-wgN` + `ksoftirqd/*` + `iperf3`. Pinning
+  the receive workers (`pin-workers.sh`) lifted **N=32 from 60 → 77 Gbps (+29%)** at the same
+  CPU cost (efficiency 1.04 → 1.35 Gbps/core-equiv). Write-up, report, CSV, and SVGs updated;
+  `results/` now holds placement / placement_pinned / ena_express datapoints from run 2.
 - **CPU instrumentation** to answer "how many cores decrypt, and which thread pegs the
   bottleneck core" (the open question from the 0.2.0 run):
   - `collect.sh` now emits a per-core utilisation histogram (`util_band_*`), **busy
