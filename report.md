@@ -22,7 +22,7 @@
   "instance_store_nvme_nodes": "0,1",
   "nic_pci": "0000:97:00.0",
   "nvme_sharing_nic_node": 8,
-  "verdict": "multi-node, NIC on node 1 — A/B: keep userspace OFF the NIC node (try NODE=0 first), reserve node 1 for the kernel RX/decrypt path"
+  "verdict": "multi-node, NIC on node 1 — keep IRQs (NIC-local already), softirq, decrypt AND userspace on node 1 (measured: NODE=1 pin-workers wins)"
 }`
 
 ## Sweep
