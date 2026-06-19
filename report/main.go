@@ -2,67 +2,18 @@
 // aggregate Gbps vs tunnel count, measured Gbps-per-busy-core (crypto efficiency), PPS,
 // SRD activity, and the *measured* binding limit for each datapoint.
 //
-//	go run . ../results > ../report.md
+//	go run . ../results [out.csv] > ../report.md
 package main
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
+
+	dp "wg-saturate/report/internal/datapoint"
 )
-
-type Node struct {
-	BusyCores       float64 `json:"busy_cores"`
-	MaxCoreUtil     float64 `json:"max_core_util"`
-	SoftirqTopShare float64 `json:"softirq_rx_top_core_share"`
-	BwIn            float64 `json:"bw_in_allowance_exceeded"`
-	BwOut           float64 `json:"bw_out_allowance_exceeded"`
-	Pps             float64 `json:"pps_allowance_exceeded"`
-	Conntrack       float64 `json:"conntrack_allowance_exceeded"`
-	SrdTx           float64 `json:"ena_srd_tx_pkts"`
-	SrdEligibleTx   float64 `json:"ena_srd_eligible_tx_pkts"`
-	SrdUtil         float64 `json:"ena_srd_resource_utilization"`
-	TxPps           float64 `json:"tx_pps"`
-}
-
-type Datapoint struct {
-	N     int     `json:"n_tunnels"`
-	Mode  string  `json:"mode"`
-	MTU   int     `json:"wg_mtu"`
-	Gbps  float64 `json:"throughput_gbps"`
-	NodeA Node    `json:"node_a"`
-	NodeB Node    `json:"node_b"`
-}
-
-// classify returns the measured binding limit for a datapoint.
-func classify(d Datapoint) string {
-	a, b := d.NodeA, d.NodeB
-	switch {
-	case a.BwOut > 0 || b.BwIn > 0 || a.BwIn > 0 || b.BwOut > 0:
-		return "bandwidth allowance (instance wall)"
-	case a.Pps > 0 || b.Pps > 0:
-		return "PPS allowance (use jumbo)"
-	case a.Conntrack > 0 || b.Conntrack > 0:
-		return "conntrack allowance"
-	case a.MaxCoreUtil > 95 || b.MaxCoreUtil > 95:
-		return "CPU / crypto"
-	case a.SoftirqTopShare > 0.5 || b.SoftirqTopShare > 0.5:
-		return "single RX queue (need more tunnels)"
-	default:
-		return "linear region (unbound)"
-	}
-}
-
-func maxf(x, y float64) float64 {
-	if x > y {
-		return x
-	}
-	return y
-}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -76,27 +27,7 @@ func main() {
 		csvPath = os.Args[2]
 	}
 
-	var dps []Datapoint
-	filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() || filepath.Base(p) != "datapoint.json" {
-			return nil
-		}
-		b, e := os.ReadFile(p)
-		if e != nil {
-			return nil
-		}
-		var d Datapoint
-		if json.Unmarshal(b, &d) == nil && d.N > 0 {
-			dps = append(dps, d)
-		}
-		return nil
-	})
-	sort.Slice(dps, func(i, j int) bool {
-		if dps[i].Mode != dps[j].Mode {
-			return dps[i].Mode < dps[j].Mode
-		}
-		return dps[i].N < dps[j].N
-	})
+	dps, _ := dp.Load(root)
 
 	// optional ceilings
 	printCeiling := func(name, file string) {
@@ -114,46 +45,40 @@ func main() {
 	fmt.Println()
 
 	fmt.Println("## Sweep")
-	fmt.Println("| mode | N | Gbps | Gbps/busy-core | sender PPS | busy cores (A/B) | SRD tx pkts | binding limit |")
-	fmt.Println("|------|---|------|----------------|-----------|------------------|-------------|---------------|")
+	fmt.Println("| mode | N | Gbps | NVMe GB/s | Gbps/busy-core | sender PPS | busy cores (A/B) | SRD tx pkts | binding limit |")
+	fmt.Println("|------|---|------|-----------|----------------|-----------|------------------|-------------|---------------|")
 	for _, d := range dps {
-		busy := maxf(d.NodeA.BusyCores, d.NodeB.BusyCores)
-		eff := 0.0
-		if busy > 0 {
-			eff = d.Gbps / busy
+		nvme := "-"
+		if d.NvmeGBs > 0 {
+			nvme = fmt.Sprintf("%.1f", d.NvmeGBs)
 		}
-		fmt.Printf("| %s | %d | %.1f | %.2f | %.0f | %.0f/%.0f | %.0f | %s |\n",
-			d.Mode, d.N, d.Gbps, eff, d.NodeA.TxPps,
-			d.NodeA.BusyCores, d.NodeB.BusyCores, d.NodeA.SrdTx, classify(d))
+		fmt.Printf("| %s | %d | %.1f | %s | %.2f | %.0f | %.0f/%.0f | %.0f | %s |\n",
+			d.Mode, d.N, d.Gbps, nvme, d.GbpsPerBusyCore(), d.NodeA.TxPps,
+			d.NodeA.BusyCores, d.NodeB.BusyCores, d.NodeA.SrdTx, dp.Classify(d))
 	}
 
 	// per-mode summary: peak Gbps and first hard-allowance knee
 	fmt.Println("\n## Per-mode summary")
-	seen := map[string]bool{}
-	for _, d := range dps {
-		if seen[d.Mode] {
-			continue
-		}
-		seen[d.Mode] = true
+	for _, mode := range dp.Modes(dps) {
 		var peak float64
 		var kneeN int
 		var kneeLimit string
 		for _, e := range dps {
-			if e.Mode != d.Mode {
+			if e.Mode != mode {
 				continue
 			}
 			if e.Gbps > peak {
 				peak = e.Gbps
 			}
-			lim := classify(e)
+			lim := dp.Classify(e)
 			if kneeN == 0 && lim != "linear region (unbound)" {
 				kneeN, kneeLimit = e.N, lim
 			}
 		}
 		if kneeN == 0 {
-			fmt.Printf("- **%s:** peak %.1f Gbps; no knee reached (stayed in the linear region — add tunnels)\n", d.Mode, peak)
+			fmt.Printf("- **%s:** peak %.1f Gbps; no knee reached (stayed in the linear region — add tunnels)\n", mode, peak)
 		} else {
-			fmt.Printf("- **%s:** peak %.1f Gbps; first knee at N=%d (%s)\n", d.Mode, peak, kneeN, kneeLimit)
+			fmt.Printf("- **%s:** peak %.1f Gbps; first knee at N=%d (%s)\n", mode, peak, kneeN, kneeLimit)
 		}
 	}
 
@@ -168,7 +93,7 @@ func main() {
 
 // writeCSV emits one row per datapoint, mirroring the markdown sweep table plus the raw
 // allowance-counter deltas (so the attribution is reproducible from the CSV alone).
-func writeCSV(path string, dps []Datapoint) error {
+func writeCSV(path string, dps []dp.Datapoint) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
@@ -178,7 +103,7 @@ func writeCSV(path string, dps []Datapoint) error {
 	defer w.Flush()
 
 	header := []string{
-		"mode", "n_tunnels", "wg_mtu", "gbps", "gbps_per_busy_core", "sender_pps",
+		"mode", "n_tunnels", "wg_mtu", "gbps", "nvme_GBps", "rw", "gbps_per_busy_core", "sender_pps",
 		"busy_cores_a", "busy_cores_b", "max_core_util_a", "max_core_util_b",
 		"softirq_top_share_a", "softirq_top_share_b",
 		"bw_out_a", "bw_in_a", "bw_out_b", "bw_in_b", "pps_a", "pps_b",
@@ -188,20 +113,15 @@ func writeCSV(path string, dps []Datapoint) error {
 		return err
 	}
 	for _, d := range dps {
-		busy := maxf(d.NodeA.BusyCores, d.NodeB.BusyCores)
-		eff := 0.0
-		if busy > 0 {
-			eff = d.Gbps / busy
-		}
 		row := []string{
-			d.Mode, itoa(d.N), itoa(d.MTU), ftoa(d.Gbps), ftoa(eff), ftoa(d.NodeA.TxPps),
+			d.Mode, itoa(d.N), itoa(d.MTU), ftoa(d.Gbps), ftoa(d.NvmeGBs), d.RW, ftoa(d.GbpsPerBusyCore()), ftoa(d.NodeA.TxPps),
 			ftoa(d.NodeA.BusyCores), ftoa(d.NodeB.BusyCores),
 			ftoa(d.NodeA.MaxCoreUtil), ftoa(d.NodeB.MaxCoreUtil),
 			ftoa(d.NodeA.SoftirqTopShare), ftoa(d.NodeB.SoftirqTopShare),
 			ftoa(d.NodeA.BwOut), ftoa(d.NodeA.BwIn), ftoa(d.NodeB.BwOut), ftoa(d.NodeB.BwIn),
 			ftoa(d.NodeA.Pps), ftoa(d.NodeB.Pps),
 			ftoa(d.NodeA.Conntrack), ftoa(d.NodeB.Conntrack),
-			ftoa(d.NodeA.SrdTx), ftoa(d.NodeB.SrdTx), classify(d),
+			ftoa(d.NodeA.SrdTx), ftoa(d.NodeB.SrdTx), dp.Classify(d),
 		}
 		if err := w.Write(row); err != nil {
 			return err
