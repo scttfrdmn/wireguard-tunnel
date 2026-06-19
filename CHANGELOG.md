@@ -11,6 +11,20 @@ schema, report columns) may change between minor versions.
 ## [Unreleased]
 
 ### Added
+- **`PIPELINING-DESIGN.md`** — design + experiment plan for placing the
+  read→encrypt→network→decrypt→write stages across cores/NUMA. Covers 3 approaches
+  (NUMA-confined per-flow, staged hand-off, RX-to-decrypt alignment), the corrected-confound
+  experiment plan, and — per discussion — the NVMe near:far drive-ratio as a load-balance
+  (node-1 bus contention vs far-side extra hop, offsetting on different resources).
+- **`measure-membw-numa.sh`** — per-NUMA-node STREAM Triad (cpu-node × mem-node cross-product
+  via numactl) → local vs remote memory bandwidth + remote-penalty %. Answers "what's the
+  memory bandwidth from complex 0 vs 1, and the cost of the far-side hop." Surfaced in report.
+- **`detect-nvme.sh` node-awareness** (`--node N`, `--with-node`) — tag/select instance-store
+  drives by NUMA node, for the near:far ratio sweep.
+- **`detect-numa.sh` PCIe probe** — counts how many instance NVMe share the NIC's PCIe
+  node/bus (the NIC↔NVMe bus-contention concern); emits `nvme_sharing_nic_node`.
+- **`node-setup.sh` NIC-local IRQ pinning** (`IRQ_CORES=` override) — fixes the NUMA-blind
+  round-robin that pinned ENA RX IRQs to node 0 regardless of the NIC's node.
 - **NUMA / device-affinity probe** (`detect-numa.sh`): reports NUMA node count, per-node
   cpulists, and NIC/NVMe → node from sysfs. Auto-run by `node-setup.sh` → `results/numa.json`;
   surfaced in the report's Ceilings. `pin-workers.sh` gained a `NODE=<n>` knob to confine

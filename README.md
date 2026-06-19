@@ -63,6 +63,7 @@ sudo ./scripts/node-setup.sh          # kernel, packages, tuning, jumbo, IRQ poo
 ./scripts/measure-baseline.sh <B_priv_ip>
 ./scripts/measure-nvme.sh
 ./scripts/measure-membw.sh
+./scripts/measure-membw-numa.sh      # per-NUMA-node: local vs remote memory bandwidth
 
 # 3. ENA Express toggle (from a host with AWS creds; both ENIs)
 ./scripts/enable-ena-express.sh on  <ENI_A> <ENI_B>     # or 'off'

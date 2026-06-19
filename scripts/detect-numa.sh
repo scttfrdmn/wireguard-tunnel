@@ -65,12 +65,26 @@ for d in /sys/class/nvme/nvme*; do
 done
 nvme_nodes=$(echo "$nvme_nodes" | tr ' ' '\n' | grep -v '^$' | sort -u | paste -sd, - 2>/dev/null || echo "")
 
+# --- PCIe topology: which devices share the NIC's host bridge / root complex ---
+# The NIC and ~half the NVMe live on the NIC node's PCIe root; at high rate their DMA shares
+# the same upstream bus into that node's memory controller. Record co-resident device count so
+# we can reason about NIC<->NVMe bus contention on the shared side.
+nic_pci=$(basename "$(readlink -f "/sys/class/net/$IF/device" 2>/dev/null)" 2>/dev/null || echo "")
+nic_pci_node=$(cat "/sys/bus/pci/devices/$nic_pci/numa_node" 2>/dev/null || echo "?")
+same_node_nvme=0
+for d in /sys/class/nvme/nvme*; do
+  [ -e "$d/numa_node" ] || continue
+  [ "$(cat "$d/numa_node" 2>/dev/null)" = "$nic_node" ] && \
+    grep -qi 'Instance' "$d/model" 2>/dev/null && same_node_nvme=$((same_node_nvme+1))
+done
+log "PCIe: NIC at $nic_pci (pci numa_node=$nic_pci_node); $same_node_nvme instance-NVMe share node $nic_node's PCIe/bus"
+[ "$same_node_nvme" -gt 0 ] && log "  => NIC RX DMA + those $same_node_nvme drives' write DMA contend on node $nic_node's bus at high rate"
+
 # --- verdict ---
-# NB: measured A/B (2026-06-19) showed pinning userspace receivers to the NIC-LOCAL node is
-# the WORST high-N strategy — userspace then contends with the kernel RX/softirq/decrypt path
-# that already lives there. Best was userspace on the NIC-REMOTE node (kernel stack keeps the
-# NIC-local node), a 2-stage split across the complex. So the verdict recommends an A/B, not
-# blind NIC-local pinning.
+# NB: the run-3 A/B that appeared to favor the NIC-REMOTE node was CONFOUNDED — the ENA RX IRQs
+# were pinned to node 0 (NIC-remote) by a NUMA-blind round-robin, so "remote userspace" was
+# really "userspace co-located with the (misplaced) RX-softirq". With IRQs now NIC-local, the
+# right move is to A/B again. Do NOT assume NIC-remote is good.
 verdict="single-node (placement moot)"
 if [ "$node_count" -gt 1 ]; then
   if [ "$nic_node" = "-1" ] || [ "$nic_node" = "absent" ]; then
@@ -92,6 +106,8 @@ cat > "$OUT" <<JSON
   "nic_numa_node": "$nic_node",
   "nic_local_cpulist": "${nic_localcpus}",
   "instance_store_nvme_nodes": "${nvme_nodes}",
+  "nic_pci": "${nic_pci}",
+  "nvme_sharing_nic_node": ${same_node_nvme:-0},
   "verdict": "$verdict"
 }
 JSON
