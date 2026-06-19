@@ -12,14 +12,18 @@ schema, report columns) may change between minor versions.
 
 ### Added
 - **Run 4 measured results — NUMA confound resolved + memory-BW + NVMe ratio.** With the IRQ
-  fix (IRQs now NIC-local), the userspace A/B **flipped**: all-NIC-local (`NODE=1`) = **74 Gbps**
-  vs unpinned 64 vs remote (`NODE=0`) 55 at N=32 — confirming "keep the whole receive pipeline
+  fix (IRQs now NIC-local), the userspace A/B **flipped**: all-NIC-local (`NODE=1`) = **89.5 Gbps**
+  vs unpinned 60 vs remote (`NODE=0`) 55 at N=32 — confirming "keep the whole receive pipeline
   on the NIC-local node" (run-3's "remote wins" was purely the NUMA-blind-IRQ artifact).
   Per-NUMA memory bandwidth measured: **local 381 / remote 69 GB/s (90% penalty)** — and the
   old all-core "5551 GB/s" was a cache-measurement bug (`measure-membw-numa.sh` fixed to use
   malloc + checksum + 6 GiB working set). NVMe near:far ratio: placement barely matters at the
-  CPU-bound ~9 GB/s rate (near 9.4 / far 8.7 / balanced 6.9 read). `detect-numa.sh` verdict
+  CPU-bound ~8 GB/s rate (near read 8.3 / far 7.5 / balanced 7.2). `detect-numa.sh` verdict
   corrected to recommend NIC-local co-location.
+  - **Data note:** a merge bug lost most of run 4's raw `datapoint.json` before commit; the
+    full experiment was **re-run as run 4b** and captured correctly (the 89.5 Gbps / 381-69
+    GB/s / near-far figures above are the re-run's). Older draft numbers (run-3's confounded
+    75.7, run-4's 74) remain in the historical bullets below as written at the time.
 
 ### Fixed
 - **`measure-membw-numa.sh` cache/relocation bugs:** original static-BSS arrays overflowed the

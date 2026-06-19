@@ -8,9 +8,9 @@
   "test": "membw_numa",
   "nodes": 2,
   "threads_per_cell": 96,
-  "cells_GBps": { "1-1":379.7,"1-0":69.1,"0-0":382.1,"0-1":69.0 },
-  "local_avg_GBps": 380.9,
-  "remote_avg_GBps": 69.0,
+  "cells_GBps": { "1-1":382.2,"1-0":68.2,"0-0":381.0,"0-1":68.6 },
+  "local_avg_GBps": 381.6,
+  "remote_avg_GBps": 68.4,
   "remote_penalty_pct": 90.0
 }`
 - **NUMA topology:** `{
@@ -36,9 +36,18 @@
 | ena_express | 16 | 55.5 | - | 14.2/42.5 | 1.31 | 20/100 | 12627 | CPU / crypto |
 | ena_express | 24 | 55.7 | - | 14.0/51.8 | 1.08 | 18/100 | 27530 | CPU / crypto |
 | ena_express | 32 | 58.7 | - | 14.7/57.6 | 1.02 | 19/98 | 8795 | CPU / crypto |
-| irqlocal_userN1 | 8 | 52.4 | - | 13.6/27.2 | 1.93 | 22/96 | 0 | CPU / crypto |
-| irqlocal_userN1 | 16 | 65.1 | - | 17.5/41.1 | 1.58 | 20/100 | 0 | CPU / crypto |
-| irqlocal_userN1 | 24 | 71.2 | - | 19.3/49.4 | 1.44 | 20/100 | 0 | CPU / crypto |
+| irqlocal_unpinned | 8 | 41.2 | - | 11.2/20.3 | 2.03 | 16/96 | 0 | CPU / crypto |
+| irqlocal_unpinned | 16 | 67.6 | - | 18.1/44.7 | 1.51 | 19/100 | 0 | CPU / crypto |
+| irqlocal_unpinned | 24 | 56.8 | - | 14.3/52.0 | 1.09 | 14/100 | 0 | CPU / crypto |
+| irqlocal_unpinned | 32 | 59.8 | - | 15.0/60.1 | 0.99 | 12/100 | 0 | CPU / crypto |
+| irqlocal_userN0 | 8 | 37.8 | - | 10.3/20.2 | 1.87 | 17/94 | 0 | linear region (unbound) |
+| irqlocal_userN0 | 16 | 56.3 | - | 14.4/43.0 | 1.31 | 16/100 | 0 | CPU / crypto |
+| irqlocal_userN0 | 24 | 55.2 | - | 13.7/51.5 | 1.07 | 13/100 | 0 | CPU / crypto |
+| irqlocal_userN0 | 32 | 55.4 | - | 13.4/59.3 | 0.93 | 20/100 | 0 | CPU / crypto |
+| irqlocal_userN1 | 8 | 39.3 | - | 10.7/20.3 | 1.94 | 19/97 | 0 | CPU / crypto |
+| irqlocal_userN1 | 16 | 65.2 | - | 17.4/39.9 | 1.63 | 21/100 | 0 | CPU / crypto |
+| irqlocal_userN1 | 24 | 74.4 | - | 19.6/52.1 | 1.43 | 19/100 | 0 | CPU / crypto |
+| irqlocal_userN1 | 32 | 89.5 | - | 24.4/62.9 | 1.42 | 28/100 | 0 | CPU / crypto |
 | numa_node0 | 8 | 53.3 | - | 14.0/29.0 | 1.84 | 23/96 | 0 | CPU / crypto |
 | numa_node0 | 16 | 61.4 | - | 16.2/36.7 | 1.67 | 27/100 | 0 | CPU / crypto |
 | numa_node0 | 24 | 70.8 | - | 18.6/47.0 | 1.51 | 25/100 | 0 | CPU / crypto |
@@ -47,7 +56,12 @@
 | numa_node1 | 16 | 57.3 | - | 14.7/44.2 | 1.30 | 21/100 | 0 | CPU / crypto |
 | numa_node1 | 24 | 57.0 | - | 14.2/0.0 | 4.02 | 16/0 | 0 | linear region (unbound) |
 | numa_node1 | 32 | 56.3 | - | 14.0/58.0 | 0.97 | 16/98 | 0 | CPU / crypto |
-| nvme_tcp_near_write | 32 | 68.5 | 8.6 | 18.2/0.0 | 3.76 | 33/0 | 0 | linear region (unbound) |
+| nvme_tcp_balanced_read | 32 | 57.9 | 7.2 | 1.1/0.0 | 51.67 | 100/0 | 0 | CPU / crypto |
+| nvme_tcp_balanced_write | 32 | 62.6 | 7.8 | 1.1/0.0 | 55.43 | 56/0 | 0 | linear region (unbound) |
+| nvme_tcp_far_read | 32 | 59.9 | 7.5 | 47.3/0.0 | 1.27 | 76/0 | 0 | linear region (unbound) |
+| nvme_tcp_far_write | 32 | 63.6 | 7.9 | 14.8/0.0 | 4.29 | 28/0 | 0 | linear region (unbound) |
+| nvme_tcp_near_read | 32 | 66.8 | 8.3 | 46.7/0.0 | 1.43 | 76/0 | 0 | linear region (unbound) |
+| nvme_tcp_near_write | 32 | 58.9 | 7.4 | 13.2/0.0 | 4.46 | 26/0 | 0 | linear region (unbound) |
 | nvme_tcp_placement_read | 8 | 49.8 | 6.2 | 0.0/0.0 | 0.00 | 76/0 | 1843513 | linear region (unbound) |
 | nvme_tcp_placement_read | 16 | 71.3 | 8.9 | 0.0/0.0 | 71.28 | 99/0 | 1349375 | CPU / crypto |
 | nvme_tcp_placement_read | 32 | 67.1 | 8.4 | 0.0/0.0 | 67.13 | 100/0 | 560 | CPU / crypto |
@@ -82,9 +96,18 @@
 | ena_express | 16 | |__napi/wg10-0:17 |__napi/wg5-0:16 |__napi/wg12-0:15 |__napi/wg15-0:15 | |__ksoftirqd/1:7 |__ksoftirqd/25:6 |__ksoftirqd/5:6 |__ksoftirqd/20:6 |
 | ena_express | 24 | |__pidstat:10 |__napi/wg22-0:10 |__napi/wg10-0:10 |__napi/wg16-0:9 | |__kworker/22:3-wg-crypt-wg21:8 |__kworker/4:1-wg-crypt-wg3:8 |__kworker/1:3-wg-crypt-wg18:8 |__kworker/1:0-wg-crypt-wg5:7 |
 | ena_express | 32 | |__pidstat:10 |__napi/wg31-0:7 |__napi/wg20-0:7 |__napi/wg18-0:6 | |__iperf3:61 |__iperf3:59 |__iperf3:54 |__iperf3:54 |
-| irqlocal_userN1 | 8 | |__napi/wg5-0:26 |__napi/wg6-0:25 |__napi/wg1-0:25 |__napi/wg3-0:25 | |__iperf3:51 |__iperf3:43 |__iperf3:37 |__iperf3:36 |
-| irqlocal_userN1 | 16 | |__napi/wg8-0:26 |__napi/wg5-0:25 |__napi/wg11-0:25 |__napi/wg3-0:24 | |__iperf3:64 |__iperf3:39 |__iperf3:38 |__iperf3:38 |
-| irqlocal_userN1 | 24 | |__napi/wg18-0:23 |__napi/wg11-0:23 |__napi/wg8-0:22 |__napi/wg17-0:22 | |__ksoftirqd/118:16 |__ksoftirqd/120:14 |__ksoftirqd/117:12 |__ksoftirqd/126:12 |
+| irqlocal_unpinned | 8 | |__napi/wg3-0:28 |__napi/wg2-0:27 |__napi/wg1-0:27 |__napi/wg5-0:26 | |__iperf3:28 |__iperf3:28 |__iperf3:28 |__iperf3:27 |
+| irqlocal_unpinned | 16 | |__napi/wg8-0:19 |__napi/wg12-0:19 |__napi/wg15-0:19 |__napi/wg13-0:18 | |__iperf3:59 |__iperf3:59 |__iperf3:59 |__iperf3:58 |
+| irqlocal_unpinned | 24 | |__napi/wg14-0:11 |__napi/wg8-0:11 |__pidstat:10 |__napi/wg22-0:9 | |__kworker/121:5-mm_percpu_wq:10 |__kworker/103:6-wg-crypt-wg17:10 |__kworker/122:1-events:10 |__kworker/100:0-events:10 |
+| irqlocal_unpinned | 32 | |__pidstat:10 |__napi/wg18-0:8 |__napi/wg23-0:8 |__napi/wg22-0:8 | |__kworker/121:2-mm_percpu_wq:13 |__kworker/124:3-wg-crypt-wg14:12 |__kworker/111:4-wg-crypt-wg14:12 |__kworker/113:4-mm_percpu_wq:11 |
+| irqlocal_userN0 | 8 | |__napi/wg2-0:25 |__napi/wg1-0:25 |__napi/wg7-0:25 |__napi/wg5-0:24 | |__iperf3:47 |__iperf3:31 |__iperf3:31 |__iperf3:30 |
+| irqlocal_userN0 | 16 | |__napi/wg7-0:17 |__napi/wg9-0:16 |__napi/wg15-0:16 |__napi/wg12-0:15 | |__iperf3:77 |__iperf3:75 |__iperf3:74 |__iperf3:74 |
+| irqlocal_userN0 | 24 | |__pidstat:11 |__napi/wg23-0:10 |__napi/wg20-0:10 |__napi/wg12-0:9 | |__kworker/98:0-wg-crypt-wg1:11 |__kworker/117:1-wg-crypt-wg7:10 |__kworker/118:1-wg-crypt-wg7:10 |__kworker/111:9-wg-crypt-wg2:9 |
+| irqlocal_userN0 | 32 | |__pidstat:11 |__napi/wg31-0:6 |__napi/wg22-0:6 |__napi/wg30-0:6 | |__kworker/113:5-wg-crypt-wg26:10 |__kworker/98:9-wg-crypt-wg29:9 |__kworker/101:5-mm_percpu_wq:9 |__kworker/110:2-wg-crypt-wg28:9 |
+| irqlocal_userN1 | 8 | |__napi/wg0-0:29 |__napi/wg3-0:28 |__napi/wg5-0:26 |__napi/wg2-0:26 | |__ksoftirqd/103:32 |__iperf3:31 |__iperf3:26 |__iperf3:26 |
+| irqlocal_userN1 | 16 | |__napi/wg10-0:26 |__napi/wg11-0:26 |__napi/wg15-0:26 |__napi/wg9-0:25 | |__iperf3:38 |__iperf3:38 |__iperf3:37 |__iperf3:36 |
+| irqlocal_userN1 | 24 | |__napi/wg20-0:22 |__napi/wg23-0:21 |__napi/wg10-0:20 |__napi/wg8-0:19 | |__kworker/184:3-mm_percpu_wq:11 |__ksoftirqd/111:11 |__ksoftirqd/100:11 |__ksoftirqd/121:11 |
+| irqlocal_userN1 | 32 | |__napi/wg29-0:21 |__napi/wg9-0:21 |__napi/wg20-0:20 |__napi/wg8-0:18 | |__kworker/180:4-events:13 |__kworker/172:0-events:13 |__kworker/157:1-mm_percpu_wq:12 |__kworker/154:3-mm_percpu_wq:12 |
 | numa_node0 | 8 | |__napi/wg7-0:28 |__napi/wg6-0:28 |__napi/wg2-0:27 |__napi/wg1-0:26 | |__iperf3:63 |__iperf3:32 |__iperf3:31 |__iperf3:31 |
 | numa_node0 | 16 | |__napi/wg3-0:29 |__napi/wg7-0:29 |__napi/wg4-0:27 |__napi/wg8-0:24 | |__iperf3:49 |__iperf3:37 |__iperf3:36 |__iperf3:36 |
 | numa_node0 | 24 | |__napi/wg7-0:20 |__napi/wg23-0:20 |__napi/wg22-0:19 |__napi/wg8-0:18 | |__iperf3:45 |__iperf3:38 |__iperf3:36 |__iperf3:36 |
@@ -93,7 +116,12 @@
 | numa_node1 | 16 | |__napi/wg2-0:16 |__napi/wg4-0:16 |__napi/wg7-0:16 |__napi/wg0-0:16 | |__kworker/27:4-wg-crypt-wg1:7 |__kworker/6:4-wg-crypt-wg7:7 |__ksoftirqd/24:7 |__ksoftirqd/2:6 |
 | numa_node1 | 24 | |__napi/wg0-0:11 |__napi/wg7-0:10 |__pidstat:10 |__napi/wg22-0:10 | - |
 | numa_node1 | 32 | |__pidstat:10 |__napi/wg7-0:8 |__napi/wg11-0:7 |__napi/wg31-0:7 | |__iperf3:70 |__iperf3:69 |__iperf3:68 |__iperf3:66 |
-| nvme_tcp_near_write | 32 | |__fio:20 |__napi/wg3-0:12 |__napi/wg23-0:12 |__napi/wg21-0:12 | - |
+| nvme_tcp_balanced_read | 32 | |__fio:100 |__pidstat:11 | - |
+| nvme_tcp_balanced_write | 32 | |__fio:100 |__pidstat:11 | - |
+| nvme_tcp_far_read | 32 | |__fio:22 |__kworker/0:4H+nvme_tcp_wq:19 |__kworker/0:1H+nvme_tcp_wq:17 |__kworker/116:4-wg-crypt-wg23:14 | - |
+| nvme_tcp_far_write | 32 | |__fio:25 |__pidstat:11 |__napi/wg7-0:10 |__napi/wg4-0:9 | - |
+| nvme_tcp_near_read | 32 | |__kworker/0:1H-nvme_tcp_wq:19 |__kworker/0:3H-nvme_tcp_wq:19 |__kworker/0:0H-nvme_tcp_wq:18 |__kworker/0:2H-nvme_tcp_wq:18 | - |
+| nvme_tcp_near_write | 32 | |__fio:25 |__pidstat:12 |__napi/wg7-0:8 |__napi/wg3-0:8 | - |
 | placement | 1 | |__napi/wg0-0:18 |__iperf3:13 |__pidstat:8 |__kworker/1:2-wg-crypt-wg0:6 | |__iperf3:37 |__napi/wg0-0:34 |__pidstat:8 |__kworker/1:0-wg-crypt-wg0:6 |
 | placement | 2 | |__iperf3:21 |__iperf3:21 |__napi/wg1-0:19 |__napi/wg0-0:16 | |__iperf3:36 |__iperf3:36 |__napi/wg0-0:35 |__napi/wg1-0:33 |
 | placement | 4 | |__napi/wg0-0:33 |__napi/wg1-0:25 |__napi/wg3-0:23 |__napi/wg2-0:23 | |__iperf3:36 |__iperf3:36 |__napi/wg0-0:35 |__napi/wg2-0:35 |
@@ -113,10 +141,17 @@
 
 ## Per-mode summary
 - **ena_express:** peak 58.7 Gbps; first knee at N=1 (single RX queue (need more tunnels))
-- **irqlocal_userN1:** peak 71.2 Gbps; first knee at N=8 (CPU / crypto)
+- **irqlocal_unpinned:** peak 67.6 Gbps; first knee at N=8 (CPU / crypto)
+- **irqlocal_userN0:** peak 56.3 Gbps; first knee at N=16 (CPU / crypto)
+- **irqlocal_userN1:** peak 89.5 Gbps; first knee at N=8 (CPU / crypto)
 - **numa_node0:** peak 75.7 Gbps; first knee at N=8 (CPU / crypto)
 - **numa_node1:** peak 57.3 Gbps; first knee at N=16 (CPU / crypto)
-- **nvme_tcp_near_write:** peak 68.5 Gbps; no knee reached (stayed in the linear region — add tunnels)
+- **nvme_tcp_balanced_read:** peak 57.9 Gbps; first knee at N=32 (CPU / crypto)
+- **nvme_tcp_balanced_write:** peak 62.6 Gbps; no knee reached (stayed in the linear region — add tunnels)
+- **nvme_tcp_far_read:** peak 59.9 Gbps; no knee reached (stayed in the linear region — add tunnels)
+- **nvme_tcp_far_write:** peak 63.6 Gbps; no knee reached (stayed in the linear region — add tunnels)
+- **nvme_tcp_near_read:** peak 66.8 Gbps; no knee reached (stayed in the linear region — add tunnels)
+- **nvme_tcp_near_write:** peak 58.9 Gbps; no knee reached (stayed in the linear region — add tunnels)
 - **nvme_tcp_placement_read:** peak 71.3 Gbps; first knee at N=16 (CPU / crypto)
 - **nvme_tcp_placement_write:** peak 66.7 Gbps; first knee at N=32 (CPU / crypto)
 - **placement:** peak 59.9 Gbps; first knee at N=1 (single RX queue (need more tunnels))

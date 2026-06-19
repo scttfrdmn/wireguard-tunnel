@@ -1,60 +1,60 @@
 {
   "n_tunnels": 32,
-  "mode": "nvme_tcp_near_write",
+  "mode": "nvme_tcp_far_write",
   "wg_mtu": 8921,
   "duration_s": 15,
-  "throughput_gbps": 58.870534232,
-  "nvme_GBps": 7.358816779,
+  "throughput_gbps": 63.58736644,
+  "nvme_GBps": 7.948420805,
   "rw": "write",
   "node_a": {
     "host": "ip-10-10-1-213",
     "duration_s": 11,
-    "tx_pps": 633302,
+    "tx_pps": 709876,
     "busy_cores": 0,
-    "max_core_util": 25.6,
+    "max_core_util": 28.5,
     "ncores": 192,
-    "busy_core_equiv": 13.19,
+    "busy_core_equiv": 14.81,
     "cores_gt50": 0,
     "cores_gt90": 0,
-    "util_band_0_10": 188,
-    "util_band_10_50": 4,
+    "util_band_0_10": 163,
+    "util_band_10_50": 29,
     "util_band_50_90": 0,
     "util_band_90_100": 0,
     "top_threads": [
       {
         "comm": "|__fio",
-        "pct": 25.1
+        "pct": 24.7
       },
       {
         "comm": "|__pidstat",
-        "pct": 12.2
+        "pct": 11.2
       },
       {
         "comm": "|__napi/wg7-0",
-        "pct": 8.5
-      },
-      {
-        "comm": "|__napi/wg3-0",
-        "pct": 8.4
-      },
-      {
-        "comm": "|__napi/wg0-0",
-        "pct": 8.3
+        "pct": 9.6
       },
       {
         "comm": "|__napi/wg4-0",
-        "pct": 8.2
+        "pct": 9.3
+      },
+      {
+        "comm": "|__napi/wg0-0",
+        "pct": 9.3
       },
       {
         "comm": "|__napi/wg2-0",
-        "pct": 8.0
+        "pct": 9.2
+      },
+      {
+        "comm": "|__napi/wg5-0",
+        "pct": 9.1
       },
       {
         "comm": "|__napi/wg1-0",
-        "pct": 8.0
+        "pct": 9.1
       }
     ],
-    "softirq_rx_top_core_share": 0.038,
+    "softirq_rx_top_core_share": 0.039,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,

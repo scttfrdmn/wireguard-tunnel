@@ -1,0 +1,69 @@
+{
+  "n_tunnels": 32,
+  "mode": "nvme_tcp_far_read",
+  "wg_mtu": 8921,
+  "duration_s": 15,
+  "throughput_gbps": 59.889546056,
+  "nvme_GBps": 7.486193257,
+  "rw": "read",
+  "node_a": {
+    "host": "ip-10-10-1-213",
+    "duration_s": 11,
+    "tx_pps": 176723,
+    "busy_cores": 0,
+    "max_core_util": 75.9,
+    "ncores": 192,
+    "busy_core_equiv": 47.32,
+    "cores_gt50": 11,
+    "cores_gt90": 0,
+    "util_band_0_10": 0,
+    "util_band_10_50": 181,
+    "util_band_50_90": 11,
+    "util_band_90_100": 0,
+    "top_threads": [
+      {
+        "comm": "|__fio",
+        "pct": 22.0
+      },
+      {
+        "comm": "|__kworker/0:4H+nvme_tcp_wq",
+        "pct": 19.3
+      },
+      {
+        "comm": "|__kworker/0:1H+nvme_tcp_wq",
+        "pct": 16.6
+      },
+      {
+        "comm": "|__kworker/116:4-wg-crypt-wg23",
+        "pct": 14.0
+      },
+      {
+        "comm": "|__kworker/121:3-wg-crypt-wg24",
+        "pct": 13.6
+      },
+      {
+        "comm": "|__kworker/106:3-wg-crypt-wg27",
+        "pct": 13.6
+      },
+      {
+        "comm": "|__kworker/101:1-wg-crypt-wg31",
+        "pct": 13.4
+      },
+      {
+        "comm": "|__kworker/105:4-wg-crypt-wg27",
+        "pct": 13.2
+      }
+    ],
+    "softirq_rx_top_core_share": 0.038,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 0,
+    "ena_srd_rx_pkts": 0,
+    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_resource_utilization": 0
+  },
+  "node_b": null
+}
