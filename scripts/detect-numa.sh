@@ -66,12 +66,18 @@ done
 nvme_nodes=$(echo "$nvme_nodes" | tr ' ' '\n' | grep -v '^$' | sort -u | paste -sd, - 2>/dev/null || echo "")
 
 # --- verdict ---
+# NB: measured A/B (2026-06-19) showed pinning userspace receivers to the NIC-LOCAL node is
+# the WORST high-N strategy — userspace then contends with the kernel RX/softirq/decrypt path
+# that already lives there. Best was userspace on the NIC-REMOTE node (kernel stack keeps the
+# NIC-local node), a 2-stage split across the complex. So the verdict recommends an A/B, not
+# blind NIC-local pinning.
 verdict="single-node (placement moot)"
 if [ "$node_count" -gt 1 ]; then
   if [ "$nic_node" = "-1" ] || [ "$nic_node" = "absent" ]; then
-    verdict="multi-node, NIC affinity HIDDEN — pin decrypt/workers per node and A/B the two halves"
+    verdict="multi-node, NIC affinity HIDDEN — A/B the two nodes (NODE=0 vs NODE=1 pin-workers)"
   else
-    verdict="multi-node, NIC on node $nic_node — pin decrypt/workers to node $nic_node cpus"
+    other=$(( nic_node == 0 ? 1 : 0 ))
+    verdict="multi-node, NIC on node $nic_node — A/B: keep userspace OFF the NIC node (try NODE=$other first), reserve node $nic_node for the kernel RX/decrypt path"
   fi
 fi
 log "VERDICT: $verdict"

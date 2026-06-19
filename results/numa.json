@@ -1,0 +1,9 @@
+{
+  "iface": "ens146",
+  "numa_nodes": 2,
+  "node_cpulist": { "1":"96-191","0":"0-95" },
+  "nic_numa_node": "1",
+  "nic_local_cpulist": "96-191",
+  "instance_store_nvme_nodes": "0,1",
+  "verdict": "multi-node, NIC on node 1 — A/B: keep userspace OFF the NIC node (try NODE=0 first), reserve node 1 for the kernel RX/decrypt path"
+}

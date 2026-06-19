@@ -162,3 +162,27 @@ the pinning table + an honest "pinning was userspace-only" caveat + the pipelini
 - User idea to pursue: **pipeline read|encrypt|network|decrypt|write across cores** (top
   follow-up; recorded in the write-up). Also: pin the kernel decrypt path (RPS/RFS/XPS +
   wg-crypt kworker affinity), pinned ena_express run, finer N grid.
+
+## 2026-06-19 — Session 4: NUMA probe + NIC-affinity A/B (run 3)
+
+truffle spot reconfirmed us-west-2d $2.2781/hr. Built detect-numa.sh (sysfs probe) + NODE=
+knob on pin-workers.sh offline, then ran live.
+
+**Classified:** i8ge.48xlarge = 2 NUMA nodes (0:0-95, 1:96-191). ENA NIC on node 1
+(EXPOSED, numa_node=1, not hidden). Instance NVMe split 8/8 across nodes. The guest does
+surface device affinity — answers the user's "is it visible in a VM" question: yes here.
+
+**Decisive A/B (receiver userspace pinning, N=8/16/24/32):**
+- NODE=1 (NIC-LOCAL): 55.9/57.3/57.0/56.3 — flat ~56, work smeared 55 cores, 0.97 Gbps/core.
+- NODE=0 (NIC-REMOTE): 53.3/61.4/70.8/75.7 — climbs to 75.7, work in 30 cores, 1.39 Gbps/core.
+- **COUNTERINTUITIVE: NIC-remote WINS.** Kernel RX/softirq/wg-crypt already lives on the
+  NIC-local node; co-locating userspace there contends. Splitting the pipeline across nodes
+  (kernel on NIC-local, userspace on the other) is the win — empirical confirmation of the
+  pipelining idea. Fixed detect-numa.sh verdict to recommend A/B, not blind NIC-local pinning.
+
+Captured insights to memory (i8ge-numa-topology, wg-saturate-key-findings, truffle-spot-tool).
+Pulled numa.json + numa_node0/1 datapoints; report now 38 datapoints/7 modes. Updated write-up
+NUMA section with the measured A/B + mechanism. terraform destroy complete, key deleted,
+billing stopped. ~25 min, <$5.
+
+### Next: design explicit cross-NUMA pipelining (read|encrypt|net|decrypt|write).

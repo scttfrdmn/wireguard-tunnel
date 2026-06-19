@@ -190,23 +190,38 @@ The lever is per-core receive efficiency, now demonstrated by the pinning result
 - The network (208 Gbps) and storage (52 GB/s read) have ample headroom; only the
   encrypted-receive CPU pipeline binds.
 
-### Note: NUMA placement (NIC / NVMe affinity)
+### NUMA placement — MEASURED, and the result is counterintuitive
 
-The +29% from userspace pinning is a cache-locality effect; if `i8ge.48xlarge` presents more
-than one NUMA node, a second, larger placement penalty may be hiding: the receiver's decrypt
-work spread across ~31 cores almost certainly straddles both nodes, while the ENA's DMA/IRQs
-sit on one. Every cross-node packet then pays an interconnect hop. This is **not yet
-measured** — and a guest may not even expose it. `detect-numa.sh` (run automatically by
-`node-setup.sh`, recorded as `results/numa.json`) reports three things from sysfs:
+`i8ge.48xlarge` **presents 2 NUMA nodes** (node 0 = cores 0-95, node 1 = cores 96-191), and
+the guest *does* expose device affinity: the **ENA NIC is on node 1** (`numa_node=1`), and the
+16 instance-store NVMe split 8/8 across both nodes (`detect-numa.sh` → `results/numa.json`).
 
-1. **node count** — if 1, the concern is moot and the pinning win was purely intra-node;
-2. **NIC → node** (`/sys/class/net/<if>/device/numa_node`) — may read `-1` in a VM if the
-   hypervisor hides device affinity;
-3. **NVMe → node(s)** — the storage end of the pipeline.
+So I ran the decisive A/B on the receiver at N=8/16/24/32: pin all userspace workers to the
+**NIC-local** node (`NODE=1`) vs the **NIC-remote** node (`NODE=0`):
 
-If the NIC node is hidden (`-1`) but there are ≥2 nodes, the empirical fallback is built in:
-`NODE=0 pin-workers.sh` then `NODE=1 pin-workers.sh`, sweep each, and the faster half reveals
-the NIC-local node. Whether this matters here is an open, answerable question for the next run.
+| N | `NODE=1` NIC-local | `NODE=0` NIC-remote |
+|---|--------------------|---------------------|
+| 8 | 55.9 | 53.3 |
+| 16 | 57.3 | 61.4 |
+| 24 | 57.0 | 70.8 |
+| 32 | **56.3** | **75.7** |
+
+**The NIC-*remote* node is decisively faster** — the opposite of the naive "pin everything
+NIC-local" intuition. The instrumentation explains it (N=32): NIC-local pinning smears work
+across **55 cores >50% busy** at 0.97 Gbps/core-equiv; NIC-remote concentrates it in **30
+cores** at 1.39 Gbps/core-equiv, for the same ~55 core-equivalents.
+
+**Mechanism:** the kernel RX path — NAPI poll, ksoftirqd, and the `wg-crypt` decrypt kworkers
+— already gravitates to the NIC-local node (1). Piling the 32 userspace `iperf3` receivers
+onto that same node makes them **contend with the kernel network stack**, so everything
+spreads thin. Putting userspace on node 0 leaves node 1's cores free for the kernel receive
+path; the two stages then **separate cleanly across the complex**, and that separation is
+worth far more than the cross-node data copy costs. This is the pipelining idea (below),
+discovered empirically: *split the pipeline across NUMA nodes rather than co-locating it.*
+
+Practical guidance (now baked into `detect-numa.sh`'s verdict): on a multi-node instance,
+**keep userspace receivers OFF the NIC-local node and reserve that node for the kernel
+RX/decrypt path** — and always A/B both nodes rather than assuming NIC-local is best.
 
 ### Note: pipelining the read→encrypt→network→decrypt→write path
 

@@ -12,11 +12,15 @@ schema, report columns) may change between minor versions.
 
 ### Added
 - **NUMA / device-affinity probe** (`detect-numa.sh`): reports NUMA node count, per-node
-  cpulists, and NIC/NVMe → node from sysfs, with a verdict (single-node = moot; multi-node
-  with NIC node known = pin to it; multi-node with NIC affinity hidden by the hypervisor =
-  A/B the two halves). Auto-run by `node-setup.sh` → `results/numa.json`; surfaced in the
-  report's Ceilings. `pin-workers.sh` gained a `NODE=<n>` knob to confine workers to one
-  node's cpus, enabling the empirical NIC-local-node discovery when the guest hides affinity.
+  cpulists, and NIC/NVMe → node from sysfs. Auto-run by `node-setup.sh` → `results/numa.json`;
+  surfaced in the report's Ceilings. `pin-workers.sh` gained a `NODE=<n>` knob to confine
+  workers to one node's cpus.
+- **NUMA A/B measured result (run 3).** `i8ge.48xlarge` = **2 NUMA nodes** (0:0-95, 1:96-191),
+  ENA NIC on **node 1** (exposed, not hidden). Counterintuitive finding: pinning userspace
+  receivers to the **NIC-remote** node 0 hit **75.7 Gbps** vs **56.3** on the NIC-local node 1
+  at N=32 — because the kernel RX/softirq/`wg-crypt` path already occupies the NIC-local node,
+  so co-locating userspace there causes contention. Best practice (now in the script verdict):
+  split the pipeline across nodes — kernel decrypt on the NIC-local node, userspace off it.
 - **Run 2 measured results (instrumented + pinning A/B).** Resolved the 0.2.0 open question:
   the receiver spends **~57 core-equivalents across ~31 cores** at N=32 (not one pegged core);
   hot threads are `napi/wgN-0` + `kworker/*-wg-crypt-wgN` + `ksoftirqd/*` + `iperf3`. Pinning
