@@ -1,0 +1,9 @@
+{
+  "test": "membw_numa",
+  "nodes": 2,
+  "threads_per_cell": 96,
+  "cells_GBps": { "1-1":379.7,"1-0":69.1,"0-0":382.1,"0-1":69.0 },
+  "local_avg_GBps": 380.9,
+  "remote_avg_GBps": 69.0,
+  "remote_penalty_pct": 90.0
+}

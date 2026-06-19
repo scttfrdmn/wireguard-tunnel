@@ -119,6 +119,27 @@ plateau). Peak **8.9 GB/s read** is far below the 52 GB/s local NVMe ceiling and
 write ceiling — so the limiter is the encrypted network/crypto path, exactly as the iperf
 sweep showed, not the disks.
 
+### NVMe near:far NUMA placement (run 4)
+
+Given the 90% remote-memory penalty, does it matter whether the target drives are on the
+NIC-local node (no hop) or the far node (extra cross-complex DMA)? Measured at N=32, exporting
+only node-1 (near), only node-0 (far), or all 16 (balanced):
+
+| target drives | read GB/s | write GB/s |
+|---|---|---|
+| 8× near (node 1, NIC-local) | **9.4** | 8.6 |
+| 8× far (node 0) | 8.7 | 8.5 |
+| 16 balanced (both nodes) | 6.9 | 8.4 |
+
+**Storage placement barely matters here** — near vs far differs by ~7% on read, ~1% on write.
+The reason: the workload (~9 GB/s ≈ 70 Gbps) is **CPU/network-bound at the same ~70 Gbps
+plateau**, far below the 69 GB/s *remote* memory ceiling, so the cross-NUMA hop has ample
+headroom and barely bites. The only real signal is **balanced read dropping to 6.9 GB/s** —
+spreading across 16 drives (vs 8) added mild contention. Practical takeaway: the near:far drive
+balance is **not a useful lever at this throughput**; it would only start to matter if storage
+bandwidth approached the ~69 GB/s remote-memory ceiling, and CPU binds long before that. Keep
+it simple — NIC-local drives, since "near" is marginally best and never worse.
+
 ## Plots
 
 - `throughput.svg` — aggregate Gbps vs N, per mode, with the ~180 Gbps wall drawn for scale.
@@ -227,15 +248,29 @@ the whole time. That means the A/B actually compared:
 - **`NODE=1`:** userspace receivers **split from the RX-softirq cores** (userspace node 1,
   softirq node 0) → 56 Gbps, cross-node hand-off on every packet.
 
-So the honest finding is **"co-locate userspace receive with the RX-softirq cores," not
-"avoid the NIC-local node."** Whether the NIC-local node is best is *still untested*, because
-the IRQs never actually ran there. The textbook-optimal layout — RX IRQs/NAPI/decrypt **on
-the NIC-local node** (so softirq touches NIC-local DMA memory), with userspace alongside — has
-not been measured. `node-setup.sh` has since been fixed to pin IRQs to the NIC-local node by
-default (with an `IRQ_CORES=` override), which sets up that experiment for the next run.
+So the honest finding from run 3 was **"co-locate userspace receive with the RX-softirq
+cores," not "avoid the NIC-local node"** — the IRQs never actually ran on the NIC-local node,
+so the textbook layout was untested.
 
-This still points at the pipelining idea (below): throughput tracks how cleanly the
-RX-softirq → decrypt → userspace stages are placed relative to each other and to NIC memory.
+**Run 4 fixed the IRQ pinning and retested** (IRQs now verified on NIC-local cores 96–191;
+softirq/ksoftirqd followed them there). The A/B *flipped*, confirming the textbook layout and
+the original NUMA intuition:
+
+| N=32, IRQs NIC-local (node 1) | Gbps | Gbps/core-equiv |
+|---|---|---|
+| userspace `NODE=1` (all NIC-local) | **74.1** | 1.31 |
+| userspace unpinned | 64.2 | — |
+| userspace `NODE=0` (remote from softirq) | 55.1 | — |
+
+**Conclusion (measured, not inferred): keep the whole receive pipeline — RX IRQ, NAPI/softirq,
+decrypt, and userspace — on the NIC-local node.** Run 3's "remote wins" was purely an artifact
+of NUMA-blind IRQ placement (`node-setup.sh` pinned IRQs to cores 0–31 = the remote node);
+once corrected, NIC-local co-location is best, as the hardware locality predicts.
+
+**Per-NUMA memory bandwidth** (run 4, `measure-membw-numa.sh`): **local ≈ 381 GB/s, remote ≈
+69 GB/s — a 90% / 5.5× penalty** (far steeper than the firmware `node distances` 10:20 implies;
+the old all-192-core "5551 GB/s" was measuring cache, a now-fixed bug — real aggregate DRAM is
+~762 GB/s). This is *why* crossing the complex hurts, and why NIC-local co-location wins.
 
 ### Note: pipelining the read→encrypt→network→decrypt→write path
 
@@ -254,6 +289,12 @@ recorded as the top follow-up; it is **not yet measured**.
 - **Run 2** (instrumented): per-core histogram + `top_threads` + the pinning A/B. Resolved
   "how many cores / which threads" (≈57 core-equivalents across ~31 cores; napi + wg-crypt
   kworkers + ksoftirqd + iperf3) and demonstrated the **60 → 77 Gbps** pinning gain.
+- **Run 3** (NUMA probe): classified the instance (2 nodes, NIC on node 1) and ran the
+  userspace A/B — which *appeared* to favor the NIC-remote node, but exposed the NUMA-blind
+  IRQ-pinning confound (IRQs were on the remote node).
+- **Run 4** (NUMA, corrected): fixed IRQ pinning to NIC-local; the A/B flipped to confirm
+  **all-NIC-local is best (74 vs 55 Gbps)**. Measured per-NUMA memory bandwidth (381 local /
+  69 remote GB/s) and the NVMe near:far ratio (placement barely matters at this CPU-bound rate).
 
 ## Reproducing
 

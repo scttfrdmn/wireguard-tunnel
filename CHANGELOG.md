@@ -11,6 +11,25 @@ schema, report columns) may change between minor versions.
 ## [Unreleased]
 
 ### Added
+- **Run 4 measured results — NUMA confound resolved + memory-BW + NVMe ratio.** With the IRQ
+  fix (IRQs now NIC-local), the userspace A/B **flipped**: all-NIC-local (`NODE=1`) = **74 Gbps**
+  vs unpinned 64 vs remote (`NODE=0`) 55 at N=32 — confirming "keep the whole receive pipeline
+  on the NIC-local node" (run-3's "remote wins" was purely the NUMA-blind-IRQ artifact).
+  Per-NUMA memory bandwidth measured: **local 381 / remote 69 GB/s (90% penalty)** — and the
+  old all-core "5551 GB/s" was a cache-measurement bug (`measure-membw-numa.sh` fixed to use
+  malloc + checksum + 6 GiB working set). NVMe near:far ratio: placement barely matters at the
+  CPU-bound ~9 GB/s rate (near 9.4 / far 8.7 / balanced 6.9 read). `detect-numa.sh` verdict
+  corrected to recommend NIC-local co-location.
+
+### Fixed
+- **`measure-membw-numa.sh` cache/relocation bugs:** original static-BSS arrays overflowed the
+  arm64 small-code-model relocation range at 6 GiB and the loop was const-folded → bogus
+  300,000+ GB/s readings. Now heap-allocated with a runtime scalar + observed checksum.
+- **`measure-nvme-tcp.sh` device discovery:** namespace block devices weren't symlinked under
+  the subsystem sysfs dir on this kernel and appear asynchronously; now derives `/dev/nvme<inst>n*`
+  from the subsystem instance and waits up to 10s for them to attach.
+
+### Added (earlier in this Unreleased cycle)
 - **`PIPELINING-DESIGN.md`** — design + experiment plan for placing the
   read→encrypt→network→decrypt→write stages across cores/NUMA. Covers 3 approaches
   (NUMA-confined per-flow, staged hand-off, RX-to-decrypt alignment), the corrected-confound

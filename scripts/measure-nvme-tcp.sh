@@ -29,12 +29,16 @@ SDIR="$(cd "$(dirname "$0")" && pwd)"
 # expose SubsystemNQN at the top level, but the kernel always lists the subsystem's namespace
 # block devices under /sys/class/nvme-subsystem/<s>/ when subsysnqn matches.
 mp_devices() {
-  local s
+  local s inst
   for s in /sys/class/nvme-subsystem/nvme-subsys*; do
     [ -e "$s/subsysnqn" ] || continue
-    if grep -qxF "$NVME_NQN" "$s/subsysnqn" 2>/dev/null; then
-      find "$s" -maxdepth 1 -name 'nvme*n*' -printf '/dev/%f\n' 2>/dev/null
-    fi
+    grep -qxF "$NVME_NQN" "$s/subsysnqn" 2>/dev/null || continue
+    # subsystem instance number (nvme-subsys17 -> 17); its namespace multipath block devices
+    # are /dev/nvme17n* (NOT symlinked under the subsys sysfs dir on all kernels). Exclude
+    # partitions (…p1) and controller-scoped names (nvme17c17n2).
+    inst=$(basename "$s" | sed 's/nvme-subsys//')
+    find /dev -maxdepth 1 -regextype posix-extended \
+      -regex "/dev/nvme${inst}n[0-9]+" 2>/dev/null
   done | sort -u
 }
 
@@ -53,7 +57,11 @@ for N in $SWEEP; do
       --host-traddr "$src" >/dev/null 2>&1 \
       || log "WARN: path $i ($src->$dst:$svc) failed to connect"
   done
-  sleep 1
+  # namespace block devices appear asynchronously after connect — wait up to ~10s for them.
+  for _try in $(seq 1 10); do
+    [ "$(mp_devices | wc -l)" -gt 0 ] && break
+    sleep 1
+  done
 
   # round-robin so commands spray across all N paths/tunnels
   for h in /sys/class/nvme-subsystem/*/iopolicy; do

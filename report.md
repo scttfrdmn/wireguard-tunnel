@@ -4,6 +4,15 @@
 - **Raw ENA baseline:** `{"test":"baseline","streams":32,"gbps":205.71669806306008,"tx_pps":2867863}`
 - **NVMe read/write:** `{"test":"nvme","devices":16,"read_GBps":52.260344373,"write_GBps":25.876960991}`
 - **Memory bandwidth:** `{"test":"membw","triad_GBps":5551.1}`
+- **Memory bandwidth (per-NUMA):** `{
+  "test": "membw_numa",
+  "nodes": 2,
+  "threads_per_cell": 96,
+  "cells_GBps": { "1-1":379.7,"1-0":69.1,"0-0":382.1,"0-1":69.0 },
+  "local_avg_GBps": 380.9,
+  "remote_avg_GBps": 69.0,
+  "remote_penalty_pct": 90.0
+}`
 - **NUMA topology:** `{
   "iface": "ens146",
   "numa_nodes": 2,
@@ -11,6 +20,8 @@
   "nic_numa_node": "1",
   "nic_local_cpulist": "96-191",
   "instance_store_nvme_nodes": "0,1",
+  "nic_pci": "0000:97:00.0",
+  "nvme_sharing_nic_node": 8,
   "verdict": "multi-node, NIC on node 1 — A/B: keep userspace OFF the NIC node (try NODE=0 first), reserve node 1 for the kernel RX/decrypt path"
 }`
 
@@ -25,6 +36,9 @@
 | ena_express | 16 | 55.5 | - | 14.2/42.5 | 1.31 | 20/100 | 12627 | CPU / crypto |
 | ena_express | 24 | 55.7 | - | 14.0/51.8 | 1.08 | 18/100 | 27530 | CPU / crypto |
 | ena_express | 32 | 58.7 | - | 14.7/57.6 | 1.02 | 19/98 | 8795 | CPU / crypto |
+| irqlocal_userN1 | 8 | 52.4 | - | 13.6/27.2 | 1.93 | 22/96 | 0 | CPU / crypto |
+| irqlocal_userN1 | 16 | 65.1 | - | 17.5/41.1 | 1.58 | 20/100 | 0 | CPU / crypto |
+| irqlocal_userN1 | 24 | 71.2 | - | 19.3/49.4 | 1.44 | 20/100 | 0 | CPU / crypto |
 | numa_node0 | 8 | 53.3 | - | 14.0/29.0 | 1.84 | 23/96 | 0 | CPU / crypto |
 | numa_node0 | 16 | 61.4 | - | 16.2/36.7 | 1.67 | 27/100 | 0 | CPU / crypto |
 | numa_node0 | 24 | 70.8 | - | 18.6/47.0 | 1.51 | 25/100 | 0 | CPU / crypto |
@@ -33,6 +47,7 @@
 | numa_node1 | 16 | 57.3 | - | 14.7/44.2 | 1.30 | 21/100 | 0 | CPU / crypto |
 | numa_node1 | 24 | 57.0 | - | 14.2/0.0 | 4.02 | 16/0 | 0 | linear region (unbound) |
 | numa_node1 | 32 | 56.3 | - | 14.0/58.0 | 0.97 | 16/98 | 0 | CPU / crypto |
+| nvme_tcp_near_write | 32 | 68.5 | 8.6 | 18.2/0.0 | 3.76 | 33/0 | 0 | linear region (unbound) |
 | nvme_tcp_placement_read | 8 | 49.8 | 6.2 | 0.0/0.0 | 0.00 | 76/0 | 1843513 | linear region (unbound) |
 | nvme_tcp_placement_read | 16 | 71.3 | 8.9 | 0.0/0.0 | 71.28 | 99/0 | 1349375 | CPU / crypto |
 | nvme_tcp_placement_read | 32 | 67.1 | 8.4 | 0.0/0.0 | 67.13 | 100/0 | 560 | CPU / crypto |
@@ -67,6 +82,9 @@
 | ena_express | 16 | |__napi/wg10-0:17 |__napi/wg5-0:16 |__napi/wg12-0:15 |__napi/wg15-0:15 | |__ksoftirqd/1:7 |__ksoftirqd/25:6 |__ksoftirqd/5:6 |__ksoftirqd/20:6 |
 | ena_express | 24 | |__pidstat:10 |__napi/wg22-0:10 |__napi/wg10-0:10 |__napi/wg16-0:9 | |__kworker/22:3-wg-crypt-wg21:8 |__kworker/4:1-wg-crypt-wg3:8 |__kworker/1:3-wg-crypt-wg18:8 |__kworker/1:0-wg-crypt-wg5:7 |
 | ena_express | 32 | |__pidstat:10 |__napi/wg31-0:7 |__napi/wg20-0:7 |__napi/wg18-0:6 | |__iperf3:61 |__iperf3:59 |__iperf3:54 |__iperf3:54 |
+| irqlocal_userN1 | 8 | |__napi/wg5-0:26 |__napi/wg6-0:25 |__napi/wg1-0:25 |__napi/wg3-0:25 | |__iperf3:51 |__iperf3:43 |__iperf3:37 |__iperf3:36 |
+| irqlocal_userN1 | 16 | |__napi/wg8-0:26 |__napi/wg5-0:25 |__napi/wg11-0:25 |__napi/wg3-0:24 | |__iperf3:64 |__iperf3:39 |__iperf3:38 |__iperf3:38 |
+| irqlocal_userN1 | 24 | |__napi/wg18-0:23 |__napi/wg11-0:23 |__napi/wg8-0:22 |__napi/wg17-0:22 | |__ksoftirqd/118:16 |__ksoftirqd/120:14 |__ksoftirqd/117:12 |__ksoftirqd/126:12 |
 | numa_node0 | 8 | |__napi/wg7-0:28 |__napi/wg6-0:28 |__napi/wg2-0:27 |__napi/wg1-0:26 | |__iperf3:63 |__iperf3:32 |__iperf3:31 |__iperf3:31 |
 | numa_node0 | 16 | |__napi/wg3-0:29 |__napi/wg7-0:29 |__napi/wg4-0:27 |__napi/wg8-0:24 | |__iperf3:49 |__iperf3:37 |__iperf3:36 |__iperf3:36 |
 | numa_node0 | 24 | |__napi/wg7-0:20 |__napi/wg23-0:20 |__napi/wg22-0:19 |__napi/wg8-0:18 | |__iperf3:45 |__iperf3:38 |__iperf3:36 |__iperf3:36 |
@@ -75,6 +93,7 @@
 | numa_node1 | 16 | |__napi/wg2-0:16 |__napi/wg4-0:16 |__napi/wg7-0:16 |__napi/wg0-0:16 | |__kworker/27:4-wg-crypt-wg1:7 |__kworker/6:4-wg-crypt-wg7:7 |__ksoftirqd/24:7 |__ksoftirqd/2:6 |
 | numa_node1 | 24 | |__napi/wg0-0:11 |__napi/wg7-0:10 |__pidstat:10 |__napi/wg22-0:10 | - |
 | numa_node1 | 32 | |__pidstat:10 |__napi/wg7-0:8 |__napi/wg11-0:7 |__napi/wg31-0:7 | |__iperf3:70 |__iperf3:69 |__iperf3:68 |__iperf3:66 |
+| nvme_tcp_near_write | 32 | |__fio:20 |__napi/wg3-0:12 |__napi/wg23-0:12 |__napi/wg21-0:12 | - |
 | placement | 1 | |__napi/wg0-0:18 |__iperf3:13 |__pidstat:8 |__kworker/1:2-wg-crypt-wg0:6 | |__iperf3:37 |__napi/wg0-0:34 |__pidstat:8 |__kworker/1:0-wg-crypt-wg0:6 |
 | placement | 2 | |__iperf3:21 |__iperf3:21 |__napi/wg1-0:19 |__napi/wg0-0:16 | |__iperf3:36 |__iperf3:36 |__napi/wg0-0:35 |__napi/wg1-0:33 |
 | placement | 4 | |__napi/wg0-0:33 |__napi/wg1-0:25 |__napi/wg3-0:23 |__napi/wg2-0:23 | |__iperf3:36 |__iperf3:36 |__napi/wg0-0:35 |__napi/wg2-0:35 |
@@ -94,8 +113,10 @@
 
 ## Per-mode summary
 - **ena_express:** peak 58.7 Gbps; first knee at N=1 (single RX queue (need more tunnels))
+- **irqlocal_userN1:** peak 71.2 Gbps; first knee at N=8 (CPU / crypto)
 - **numa_node0:** peak 75.7 Gbps; first knee at N=8 (CPU / crypto)
 - **numa_node1:** peak 57.3 Gbps; first knee at N=16 (CPU / crypto)
+- **nvme_tcp_near_write:** peak 68.5 Gbps; no knee reached (stayed in the linear region — add tunnels)
 - **nvme_tcp_placement_read:** peak 71.3 Gbps; first knee at N=16 (CPU / crypto)
 - **nvme_tcp_placement_write:** peak 66.7 Gbps; first knee at N=32 (CPU / crypto)
 - **placement:** peak 59.9 Gbps; first knee at N=1 (single RX queue (need more tunnels))

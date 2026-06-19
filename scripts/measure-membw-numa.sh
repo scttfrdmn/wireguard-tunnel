@@ -27,28 +27,35 @@ cat > "$TMP/stream.c" <<'EOF'
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
-#define N (1L<<27)            /* 128M doubles/array -> ~3 GiB total */
-static double a[N], b[N], c[N];
-int main(void){
+/* ~6 GiB total: far larger than LLC, so we measure DRAM not cache. Heap (malloc), NOT static
+   arrays — 6 GiB of .bss overflows the arm64 small-code-model relocation range. Runtime
+   scalar 'q' and the printed checksum stop the compiler eliminating/hoisting the Triad loop. */
+int main(int argc, char** argv){
+  long N = 1L<<28;                              /* 256M doubles/array */
+  double q = (argc>1) ? atof(argv[1]) : 3.0;
+  double *a=malloc(N*8), *b=malloc(N*8), *c=malloc(N*8);
+  if(!a||!b||!c){ fprintf(stderr,"malloc failed\n"); return 1; }
   #pragma omp parallel for   /* first-touch under the active numactl --membind */
   for(long i=0;i<N;i++){a[i]=1.0;b[i]=2.0;c[i]=0.0;}
-  double best=1e30;
+  double best=1e30, sink=0.0;
   for(int r=0;r<10;r++){
     double t=omp_get_wtime();
     #pragma omp parallel for
-    for(long i=0;i<N;i++) c[i]=a[i]+3.0*b[i];   /* Triad: 2 read + 1 write */
+    for(long i=0;i<N;i++) c[i]=a[i]+q*b[i];     /* Triad: 2 read + 1 write */
     t=omp_get_wtime()-t;
     if(t<best) best=t;
+    sink += c[(r*99991L)%N];                    /* observe c[] so it can't be optimized away */
   }
-  printf("%.1f\n", (3.0*sizeof(double)*N)/1e9/best);
+  fprintf(stderr, "checksum %.1f\n", sink);
+  printf("%.1f\n", (3.0*8*N)/1e9/best);
   return 0;
 }
 EOF
 "$CC" -O3 -fopenmp -o "$TMP/stream" "$TMP/stream.c" || die "stream build failed"
 
-cell() { # $1=cpu-node $2=mem-node -> GB/s
-  OMP_NUM_THREADS="$THREADS" OMP_PROC_BIND=true \
-    numactl --cpunodebind="$1" --membind="$2" "$TMP/stream" 2>/dev/null
+cell() { # $1=cpu-node $2=mem-node -> GB/s (pass q=3.0 at runtime to defeat const-folding)
+  OMP_NUM_THREADS="$THREADS" OMP_PROC_BIND=spread \
+    numactl --cpunodebind="$1" --membind="$2" "$TMP/stream" 3.0 2>/dev/null
 }
 
 declare -A R

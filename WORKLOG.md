@@ -186,3 +186,27 @@ NUMA section with the measured A/B + mechanism. terraform destroy complete, key 
 billing stopped. ~25 min, <$5.
 
 ### Next: design explicit cross-NUMA pipelining (read|encrypt|net|decrypt|write).
+
+## 2026-06-19 — Session 5: NIC-local IRQ fix + membw-numa + NVMe ratio (run 4)
+
+Built offline first: measure-membw-numa.sh (per-node STREAM), node-setup NIC-local IRQ pinning,
+detect-nvme --node, detect-numa PCIe probe, nvme-target-up NVME_NODE/NVME_MAX, PIPELINING-DESIGN.md.
+
+Live run 4 (us-west-2d Spot, IP updated to 69.64.211.26):
+- **IRQ fix verified**: ENA IRQs now on cores 96-191 (node 1, NIC-local) — confirmed via
+  /proc/irq smp_affinity_list.
+- **membw-numa** (after fixing 2 bugs live — arm64 BSS reloc overflow + const-folding →
+  malloc+checksum): LOCAL 381 GB/s, REMOTE 69 GB/s, 90% penalty. Old 5551 = cache bug.
+- **Corrected NIC-local A/B (N=32)**: NODE=1 (all NIC-local) 74.1 > unpinned 64.2 > NODE=0 55.1.
+  FLIPS run-3's confounded result; confirms NIC-local co-location is best (user was right).
+  ksoftirqd now on node-1 cores (118,120,126…) — softirq followed the IRQs.
+- **NVMe near:far** (fixed mp_devices: derive /dev/nvme<inst>n* + 10s settle): near read 9.4 /
+  far 8.7 / balanced 6.9 GB/s, writes ~8.5. Placement barely matters — CPU-bound far below the
+  69 GB/s remote ceiling. Balanced read drop = mild contention, the only ratio signal.
+
+Corrected detect-numa verdict + numa.json + write-up (run-3 confound kept as history, run-4
+resolution added). Report = 42 datapoints / 9 modes. terraform destroy complete, key deleted,
+billing stopped. ~30 min, <$6.
+
+### Next: implement explicit cross-core pipelining (RPS/RFS for stages 2-4); the placement
+### levers are now well-characterized.

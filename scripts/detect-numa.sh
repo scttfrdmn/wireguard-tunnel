@@ -81,17 +81,17 @@ log "PCIe: NIC at $nic_pci (pci numa_node=$nic_pci_node); $same_node_nvme instan
 [ "$same_node_nvme" -gt 0 ] && log "  => NIC RX DMA + those $same_node_nvme drives' write DMA contend on node $nic_node's bus at high rate"
 
 # --- verdict ---
-# NB: the run-3 A/B that appeared to favor the NIC-REMOTE node was CONFOUNDED — the ENA RX IRQs
-# were pinned to node 0 (NIC-remote) by a NUMA-blind round-robin, so "remote userspace" was
-# really "userspace co-located with the (misplaced) RX-softirq". With IRQs now NIC-local, the
-# right move is to A/B again. Do NOT assume NIC-remote is good.
+# MEASURED (run 4, 2026-06-19): with ENA RX IRQs pinned to the NIC-local node (node-setup.sh
+# does this now), co-locating userspace receivers on that SAME node is best — NODE=<nic_node>
+# pin-workers gave 74 Gbps vs 64 unpinned vs 55 on the remote node. (Run 3's "remote wins" was
+# an artifact of NUMA-blind IRQ pinning, since corrected.) So: keep IRQs + softirq + decrypt +
+# userspace all on the NIC-local node.
 verdict="single-node (placement moot)"
 if [ "$node_count" -gt 1 ]; then
   if [ "$nic_node" = "-1" ] || [ "$nic_node" = "absent" ]; then
-    verdict="multi-node, NIC affinity HIDDEN — A/B the two nodes (NODE=0 vs NODE=1 pin-workers)"
+    verdict="multi-node, NIC affinity HIDDEN — pin IRQs+softirq+userspace to the same node; A/B both (NODE=0 vs NODE=1 pin-workers)"
   else
-    other=$(( nic_node == 0 ? 1 : 0 ))
-    verdict="multi-node, NIC on node $nic_node — A/B: keep userspace OFF the NIC node (try NODE=$other first), reserve node $nic_node for the kernel RX/decrypt path"
+    verdict="multi-node, NIC on node $nic_node — keep IRQs (NIC-local already), softirq, decrypt AND userspace on node $nic_node (measured: NODE=$nic_node pin-workers wins)"
   fi
 fi
 log "VERDICT: $verdict"

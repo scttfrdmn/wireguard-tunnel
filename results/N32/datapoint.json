@@ -1,0 +1,69 @@
+{
+  "n_tunnels": 32,
+  "mode": "nvme_tcp_near_write",
+  "wg_mtu": 8921,
+  "duration_s": 15,
+  "throughput_gbps": 68.502242624,
+  "nvme_GBps": 8.562780328,
+  "rw": "write",
+  "node_a": {
+    "host": "ip-10-10-1-148",
+    "duration_s": 11,
+    "tx_pps": 837600,
+    "busy_cores": 0,
+    "max_core_util": 32.9,
+    "ncores": 192,
+    "busy_core_equiv": 18.20,
+    "cores_gt50": 0,
+    "cores_gt90": 0,
+    "util_band_0_10": 133,
+    "util_band_10_50": 59,
+    "util_band_50_90": 0,
+    "util_band_90_100": 0,
+    "top_threads": [
+      {
+        "comm": "|__fio",
+        "pct": 19.9
+      },
+      {
+        "comm": "|__napi/wg3-0",
+        "pct": 11.9
+      },
+      {
+        "comm": "|__napi/wg23-0",
+        "pct": 11.9
+      },
+      {
+        "comm": "|__napi/wg21-0",
+        "pct": 11.9
+      },
+      {
+        "comm": "|__napi/wg20-0",
+        "pct": 11.8
+      },
+      {
+        "comm": "|__napi/wg15-0",
+        "pct": 11.7
+      },
+      {
+        "comm": "|__napi/wg13-0",
+        "pct": 11.7
+      },
+      {
+        "comm": "|__napi/wg14-0",
+        "pct": 11.6
+      }
+    ],
+    "softirq_rx_top_core_share": 0.041,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 0,
+    "ena_srd_rx_pkts": 0,
+    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_resource_utilization": 0
+  },
+  "node_b": null
+}
