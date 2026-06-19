@@ -99,8 +99,22 @@ resource "aws_instance" "node" {
   associate_public_ip_address = true
 
   root_block_device {
-    volume_size = 100
+    volume_size = var.root_volume_size
     volume_type = "gp3"
+  }
+
+  # Spot by default (KICKOFF prefers it). On-Demand emits no market options at all.
+  # one-time request + terminate-on-interruption: a simple, re-appliable matrix node.
+  dynamic "instance_market_options" {
+    for_each = var.use_spot ? [1] : []
+    content {
+      market_type = "spot"
+      spot_options {
+        spot_instance_type             = "one-time"
+        instance_interruption_behavior = "terminate"
+        max_price                      = var.max_spot_price != "" ? var.max_spot_price : null
+      }
+    }
   }
 
   # ENA Express (SRD) is enabled out-of-band via scripts/enable-ena-express.sh so it can be

@@ -28,3 +28,30 @@ variable "ami_id" {
   default     = ""
   description = "Override AMI (otherwise latest Ubuntu 24.04 arm64)"
 }
+
+variable "use_spot" {
+  type        = bool
+  default     = true
+  description = <<-EOT
+    Request Spot instances (KICKOFF prefers Spot to cut the ~hundreds-of-USD/hour cost).
+    Set false for On-Demand if Spot capacity for 2x i8ge.48xlarge in a cluster placement
+    group is unavailable, or if an interruption mid-matrix would be unacceptable. A Spot
+    interruption terminates the node (one-time request); just re-apply to retry.
+  EOT
+}
+
+variable "max_spot_price" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+    Max Spot price per instance-hour (USD), e.g. "20.00". Empty = no cap, i.e. AWS bills the
+    floating Spot rate but never above the On-Demand price (the recommended default — setting
+    a low cap just causes launch failures / interruptions). Only used when use_spot = true.
+  EOT
+}
+
+variable "root_volume_size" {
+  type        = number
+  default     = 100
+  description = "Root gp3 EBS volume size in GiB per node (instance-store NVMe is the scratch target, not this)."
+}

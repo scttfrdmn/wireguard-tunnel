@@ -10,3 +10,8 @@ output "node_b_eni_id" { value = aws_instance.node[1].primary_network_interface_
 output "ena_express_cmd" {
   value = "./scripts/enable-ena-express.sh on ${aws_instance.node[0].primary_network_interface_id} ${aws_instance.node[1].primary_network_interface_id}"
 }
+
+output "pricing_mode" {
+  value       = var.use_spot ? "spot (max_price=${var.max_spot_price != "" ? var.max_spot_price : "on-demand cap"})" : "on-demand"
+  description = "Whether the nodes were requested as Spot or On-Demand — confirm before a long run."
+}
