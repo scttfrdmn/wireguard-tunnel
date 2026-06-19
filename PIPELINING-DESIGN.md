@@ -109,18 +109,47 @@ Run on the corrected harness (IRQs now NIC-local). All on the receiver (B), N=16
 Decision rule: pick the layout with the highest **Gbps/core-equiv** (efficiency), not just
 peak Gbps — efficiency is what the decay metric showed is the real constraint.
 
-## What to build before that run (offline)
+## What to build before that run (offline) — ALL BUILT 2026-06-19
 
-- [x] `measure-membw-numa.sh` (done) — per-node + local/remote BW (prices the far-side hop).
-- [x] `node-setup.sh` NIC-local IRQ pinning + `IRQ_CORES=` override (done).
-- [x] `detect-nvme.sh --node N / --with-node` (done) — tag/select drives by NUMA node.
-- [x] `detect-numa.sh` PCIe probe (done) — counts NVMe sharing the NIC's bus.
-- [ ] `nvme-target-up.sh`: node-filter / near:far ratio knob (export drives by node) for the
-      ratio sweep (step 6).
-- [ ] `rps-setup.sh` — set `/sys/class/net/<if>/queues/rx-*/rps_cpus` + `rps_flow_cnt` to
-      steer softirq onto a chosen core pool (approach B/C, step 5).
-- [ ] `pin-workers.sh`: optional per-group split (tunnels→node map) for approach A.
-- [ ] (stretch) probe/set the wg-crypt workqueue cpumask for approach C.
+- [x] `measure-membw-numa.sh` — per-node + local/remote BW; now also a **thread-count sweep**
+      (1/8/24/48/96) + **pointer-chase latency probe** to tell interconnect-saturation from a
+      per-access penalty (the "is 90% real?" question).
+- [x] `node-setup.sh` NIC-local IRQ pinning + `IRQ_CORES=` override + **`IRQ_SPLIT=1`** (half
+      the ENA IRQs → NIC-local node, half → far, index-aligned with the tunnel split).
+- [x] `detect-nvme.sh --node N / --with-node` — tag/select drives by NUMA node.
+- [x] `detect-numa.sh` PCIe probe + **ENA RX-queue/RPS-state/rx_buffer_node probe**.
+- [x] `nvme-target-up.sh` `NVME_NODE=`/`NVME_MAX=` node-filter for the near:far ratio sweep.
+- [x] `rps-setup.sh` — **RPS+RFS on/off** toggle with a 192-cpu hex-mask builder (so we can
+      *measure* that RPS is neutral/negative at N≥16, not just assume it).
+- [x] `pin-workers.sh` — **`ALIGN=1`** (per-flow IRQ↔app run-to-completion, the predicted
+      next 10-20%), **`SPLIT=1`** (tunnels→node groups for approach A), plus existing `NODE=`.
+- [x] `set-crypt-affinity.sh` + `probe-wq.sh` — detect & set the wg-crypt workqueue handle
+      (`affinity_scope=numa` if writable, else `cpumask`, else documented no-op since per-CPU
+      placement already follows the NIC-local IRQ).
+- [x] `collect.sh` — per-thread-class %CPU rollup (decrypt/softirq/ksoftirqd/app) to settle
+      Story A (one serial stage) vs Story B (distributed). `report` surfaces it as a
+      "Receiver stage cost" table.
+
+## Design-review conclusions (2026-06-19) folded in
+
+A Plan-agent review course-corrected the approaches above:
+- **RPS (Lever 1): likely dead end** at N≥16 — the 32 outer flows are already RSS-hashed to
+  distinct HW queues, so RPS adds inter-core IPIs without new parallelism. Built `rps-setup.sh`
+  to *measure* this, not assume it; default keeps RPS off.
+- **Approach A node-split (Lever 4): likely dead end** — ENA allocates RX ring/buffer memory on
+  the NIC's node at queue-creation; moving a queue's IRQ to a node-0 core does NOT move its
+  buffers, so node-0 cores would stream packet payload across the 69 GB/s link. `detect-numa.sh`
+  now records `rx_buffer_node` to confirm this empirically (and may let us skip the node-split
+  sweep entirely). Built `IRQ_SPLIT`/`SPLIT` anyway since the user wants it measured.
+- **wg-crypt cpumask (Lever 3): probably a no-op** — the crypt WQ is per-CPU (`WQ_CPU_INTENSIVE`),
+  so its placement already follows the NIC-local IRQ core (which is why Run 4b hit 89.5 Gbps).
+  The realistic 6.x knob is `affinity_scope=numa`, which `set-crypt-affinity.sh` tries first.
+- **The real lever is `ALIGN`** (Lever A): per-flow IRQ↔app co-location. The known-best 89.5
+  config pinned IRQs and app *independently*, so softirq-core ≠ app-core; aligning them is the
+  cheapest remaining win. **Decision metric: Gbps/core-equiv**, not peak Gbps.
+- **Story A vs B:** the "one 100%-hot core = serialization" reading was already retracted
+  (Run 2: load spread across ~31 cores). `collect.sh`'s stage rollup + `pidstat -t` settle it
+  definitively next run; the remedy is **locality, not more spreading**.
 
 ## NVMe placement + bus-bandwidth contention (the real-workload complication)
 

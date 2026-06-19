@@ -32,14 +32,39 @@ type Node struct {
 	BandY50_90    float64  `json:"util_band_50_90"`
 	BandY90_100   float64  `json:"util_band_90_100"`
 	TopThreads    []Thread `json:"top_threads"`
-	BwIn          float64  `json:"bw_in_allowance_exceeded"`
-	BwOut         float64  `json:"bw_out_allowance_exceeded"`
-	Pps           float64  `json:"pps_allowance_exceeded"`
-	Conntrack     float64  `json:"conntrack_allowance_exceeded"`
-	SrdTx         float64  `json:"ena_srd_tx_pkts"`
-	SrdEligibleTx float64  `json:"ena_srd_eligible_tx_pkts"`
-	SrdUtil       float64  `json:"ena_srd_resource_utilization"`
-	TxPps         float64  `json:"tx_pps"`
+	// Per-thread-class CPU rollup in core-equivalents (added v0.4; settles "one stage dominates"
+	// vs "distributed"). Zero/absent on older datapoints.
+	StageDecrypt   float64 `json:"stage_decrypt_ce"`   // wg-crypt kernel workqueue (ChaCha20)
+	StageSoftirq   float64 `json:"stage_softirq_ce"`   // napi/wg* NAPI poll
+	StageKsoftirqd float64 `json:"stage_ksoftirqd_ce"` // generic ksoftirqd backlog
+	StageApp       float64 `json:"stage_app_ce"`       // iperf3 userspace reader
+	StageAppFio    float64 `json:"stage_app_fio_ce"`   // fio (nvme-tcp workload)
+	BwIn           float64 `json:"bw_in_allowance_exceeded"`
+	BwOut          float64 `json:"bw_out_allowance_exceeded"`
+	Pps            float64 `json:"pps_allowance_exceeded"`
+	Conntrack      float64 `json:"conntrack_allowance_exceeded"`
+	SrdTx          float64 `json:"ena_srd_tx_pkts"`
+	SrdEligibleTx  float64 `json:"ena_srd_eligible_tx_pkts"`
+	SrdUtil        float64 `json:"ena_srd_resource_utilization"`
+	TxPps          float64 `json:"tx_pps"`
+}
+
+// HasStageData reports whether the per-thread-class rollup was captured for this node.
+func (n Node) HasStageData() bool {
+	return n.StageDecrypt+n.StageSoftirq+n.StageKsoftirqd+n.StageApp+n.StageAppFio > 0
+}
+
+// StageStr renders the stage-cost breakdown in core-equivalents, e.g.
+// "dec=18.2 sirq=6.1 ksd=3.0 app=12.5". Used to settle whether one stage dominates.
+func (n Node) StageStr() string {
+	if !n.HasStageData() {
+		return "-"
+	}
+	s := fmt.Sprintf("dec=%.1f sirq=%.1f ksd=%.1f app=%.1f", n.StageDecrypt, n.StageSoftirq, n.StageKsoftirqd, n.StageApp)
+	if n.StageAppFio > 0 {
+		s += fmt.Sprintf(" fio=%.1f", n.StageAppFio)
+	}
+	return s
 }
 
 // TopThreadStr renders the hottest threads as "comm:pct comm:pct ...", for the report.

@@ -50,35 +50,53 @@ for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do echo performa
 log "hugepages (8 GiB of 2M pages for mover buffers)"
 echo 4096 > /proc/sys/vm/nr_hugepages 2>/dev/null || true
 
-# IRQ pinning: stop irqbalance, pin ENA queue IRQs round-robin onto a chosen core pool.
+# IRQ pinning: stop irqbalance, pin ENA queue IRQs onto a chosen core pool.
 # By default the pool is the NIC's *local* NUMA node (so RX softirq/NAPI touches NIC-local
 # memory) — this is the textbook layout and was NOT what the original code did: it pinned
 # IRQs to cores 0..N-1, which on a 2-node box lands them all on node 0 even when the NIC is
-# on node 1. Override with IRQ_CORES="a-b,c" to force a specific pool (e.g. for an A/B test).
+# on node 1. Overrides:
+#   IRQ_CORES="a-b,c"  force a specific pool (round-robin within it).
+#   IRQ_SPLIT=1        Approach-A node-split: first half of the IRQs -> NIC-local node cores,
+#                      second half -> the other node's cores, in order (so IRQ i and tunnel i
+#                      line up with pin-workers.sh SPLIT). Assigned by index, not modulo.
 log "pinning ENA IRQs (irqbalance off)"
 systemctl stop irqbalance 2>/dev/null || true
 NIC_NODE=$(cat "/sys/class/net/$PRIMARY_IF/device/numa_node" 2>/dev/null || echo -1)
-if [ -n "${IRQ_CORES:-}" ]; then
-  irq_cpulist="$IRQ_CORES"; src="IRQ_CORES override"
-elif [ "$NIC_NODE" != "-1" ] && [ -r "/sys/devices/system/node/node${NIC_NODE}/cpulist" ]; then
-  irq_cpulist=$(cat "/sys/devices/system/node/node${NIC_NODE}/cpulist"); src="NIC-local node $NIC_NODE"
+_expand() { local p; IFS=',' read -ra _ps <<< "$1"; for p in "${_ps[@]}"; do
+  if [[ "$p" == *-* ]]; then for c in $(seq "${p%-*}" "${p#*-}"); do echo "$c"; done; else echo "$p"; fi; done; }
+
+irqpool=(); split_mode=0
+if [ "${IRQ_SPLIT:-}" = 1 ] && [ "$NIC_NODE" != "-1" ]; then
+  split_mode=1
+  other=$(( NIC_NODE == 0 ? 1 : 0 ))
+  # count ENA IRQs to size each half
+  nirq=$(grep -ic "$PRIMARY_IF" /proc/interrupts || echo 0)
+  mapfile -t near < <(_expand "$(cat "/sys/devices/system/node/node${NIC_NODE}/cpulist")")
+  mapfile -t far  < <(_expand "$(cat "/sys/devices/system/node/node${other}/cpulist")")
+  half=$(( (nirq + 1) / 2 ))
+  for ((k=0;k<nirq;k++)); do
+    if [ "$k" -lt "$half" ]; then irqpool+=("${near[$(( k % ${#near[@]} ))]}")
+    else irqpool+=("${far[$(( (k-half) % ${#far[@]} ))]}"); fi
+  done
+  src="IRQ_SPLIT: $half IRQs->node $NIC_NODE, $((nirq-half))->node $other"
 else
-  irq_cpulist="0-$(($(nproc)-1))"; src="all cores (NIC node unknown)"
+  if [ -n "${IRQ_CORES:-}" ]; then
+    irq_cpulist="$IRQ_CORES"; src="IRQ_CORES override"
+  elif [ "$NIC_NODE" != "-1" ] && [ -r "/sys/devices/system/node/node${NIC_NODE}/cpulist" ]; then
+    irq_cpulist=$(cat "/sys/devices/system/node/node${NIC_NODE}/cpulist"); src="NIC-local node $NIC_NODE"
+  else
+    irq_cpulist="0-$(($(nproc)-1))"; src="all cores (NIC node unknown)"
+  fi
+  mapfile -t irqpool < <(_expand "$irq_cpulist")
 fi
-# expand "96-127,160" -> flat array
-irqpool=()
-IFS=',' read -ra _parts <<< "$irq_cpulist"
-for _p in "${_parts[@]}"; do
-  if [[ "$_p" == *-* ]]; then for _c in $(seq "${_p%-*}" "${_p#*-}"); do irqpool+=("$_c"); done
-  else irqpool+=("$_p"); fi
-done
 i=0
 while read -r irq; do
-  cpu=${irqpool[$(( i % ${#irqpool[@]} ))]}
+  if [ "$split_mode" = 1 ]; then cpu=${irqpool[$i]:-${irqpool[$(( i % ${#irqpool[@]} ))]}}
+  else cpu=${irqpool[$(( i % ${#irqpool[@]} ))]}; fi
   echo "$cpu" > "/proc/irq/$irq/smp_affinity_list" 2>/dev/null || true
   i=$((i+1))
 done < <(grep -i "$PRIMARY_IF" /proc/interrupts | awk -F: '{gsub(/ /,"",$1);print $1}')
-log "pinned $i ENA IRQs across ${#irqpool[@]} cores ($src: $irq_cpulist)"
+log "pinned $i ENA IRQs ($src)"
 
 # Record NUMA topology + device affinity once (cheap; informs whether placement must avoid
 # jumping the NUMA complex). Non-fatal if the probe finds nothing.

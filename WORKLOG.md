@@ -210,3 +210,31 @@ billing stopped. ~30 min, <$6.
 
 ### Next: implement explicit cross-core pipelining (RPS/RFS for stages 2-4); the placement
 ### levers are now well-characterized.
+
+## 2026-06-19 — Session 6: pipelining/NUMA-placement toolkit (offline build, plan-mode)
+
+Entered plan mode; a Plan agent design-reviewed the Linux RX-steering approach and
+course-corrected (folded into PIPELINING-DESIGN.md). User chose "full build, everything" +
+"pure-network first". Built ALL levers offline (no spend):
+- pin-workers.sh: ALIGN=1 (per-flow IRQ<->app run-to-completion, the predicted next win),
+  SPLIT=1 (node-split groups), kept NODE=.
+- node-setup.sh: IRQ_SPLIT=1 (half IRQs NIC-local, half far, index-aligned w/ tunnel split).
+- rps-setup.sh (new): RPS+RFS on/off + 192-cpu hex-mask builder (measure RPS, don't assume).
+- set-crypt-affinity.sh + probe-wq.sh (new): wg-crypt WQ affinity_scope/cpumask if writable.
+- collect.sh: per-thread-class %CPU rollup (decrypt/softirq/ksoftirqd/app) -> settles Story A
+  (serial) vs B (distributed). report: new "Receiver stage cost" table. detect-numa: RPS
+  state + rx_buffer_node.
+- measure-membw-numa.sh: thread sweep (1/8/24/48/96) + pointer-chase latency probe to test
+  whether the 90% remote-BW hit is interconnect saturation (likely) vs per-access penalty.
+
+Design-review verdicts (built but expected outcomes): RPS = dead end at N>=16 (flows already
+HW-spread); Approach-A node-split = likely dead end (ENA RX buffers stay on NIC node, so node-0
+cores would stream payload across the 69 GB/s link — rx_buffer_node probe will confirm);
+wg-crypt cpumask = probably no-op (per-CPU WQ already follows NIC-local IRQ). Real lever = ALIGN.
+
+Validation: shellcheck -x clean (22 scripts); go build/vet/gofmt clean; report backward-compat
+verified (stage table absent on old data, present w/ fixture); C probes compile-checked (omp
+stubbed on mac). NO SPEND. Plan file: ~/.claude/plans/cuddly-sprouting-liskov.md.
+
+### Next: live run (gated) — Phase-0 probes, settle Story A/B via stage rollup, membw thread
+### sweep, then labelled sweeps: irqlocal_userN1 baseline -> align -> rfs -> rps_on -> split.

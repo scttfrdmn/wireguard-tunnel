@@ -81,6 +81,27 @@ func main() {
 		}
 	}
 
+	// stage-cost breakdown (core-equivalents per pipeline stage on the receiver) — settles
+	// whether one stage (e.g. decrypt) dominates (serial) or the work is distributed.
+	anyStage := false
+	for _, d := range dps {
+		if d.NodeB.HasStageData() || d.NodeA.HasStageData() {
+			anyStage = true
+			break
+		}
+	}
+	if anyStage {
+		fmt.Println("\n## Receiver stage cost (core-equivalents: dec=decrypt sirq=napi ksd=ksoftirqd app=iperf3)")
+		fmt.Println("| mode | N | Gbps | receiver (node B) stage breakdown |")
+		fmt.Println("|------|---|------|-----------------------------------|")
+		for _, d := range dps {
+			if !d.NodeB.HasStageData() {
+				continue
+			}
+			fmt.Printf("| %s | %d | %.1f | %s |\n", d.Mode, d.N, d.Gbps, d.NodeB.StageStr())
+		}
+	}
+
 	// per-mode summary: peak Gbps and first hard-allowance knee
 	fmt.Println("\n## Per-mode summary")
 	for _, mode := range dp.Modes(dps) {

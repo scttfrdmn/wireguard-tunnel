@@ -11,6 +11,23 @@ schema, report columns) may change between minor versions.
 ## [Unreleased]
 
 ### Added
+- **Pipelining / NUMA-placement toolkit (offline build, gated on a live run).** Per a design
+  review (PIPELINING-DESIGN.md), built every placement lever so the next run *measures* the
+  winner rather than assuming:
+  - `pin-workers.sh`: **`ALIGN=1`** (per-flow IRQ↔app run-to-completion — the predicted next
+    win), **`SPLIT=1`** (tunnel→node groups for the Approach-A node-split), plus existing `NODE=`.
+  - `node-setup.sh`: **`IRQ_SPLIT=1`** (half the ENA IRQs → NIC-local node, half → far,
+    index-aligned with the tunnel split).
+  - `rps-setup.sh` (new): RPS+RFS on/off with a 192-cpu hex-mask builder — to measure that RPS
+    is neutral/negative when flows are already HW-spread.
+  - `set-crypt-affinity.sh` + `probe-wq.sh` (new): detect/set the wg-crypt workqueue handle
+    (`affinity_scope=numa`, else `cpumask`, else documented no-op since the WQ is per-CPU).
+  - `collect.sh`: **per-thread-class %CPU rollup** (decrypt/softirq/ksoftirqd/app core-equiv) to
+    settle "one serial stage" vs "distributed"; surfaced in `report` as a **Receiver stage cost**
+    table. `detect-numa.sh`: ENA RX-queue count, **RPS state**, and `rx_buffer_node` probe.
+  - `measure-membw-numa.sh`: **thread-count sweep** (1/8/24/48/96) + **pointer-chase latency
+    probe** to distinguish interconnect-saturation (the likely cause of the 90% remote-BW drop)
+    from a true per-access penalty.
 - **Run 4 measured results — NUMA confound resolved + memory-BW + NVMe ratio.** With the IRQ
   fix (IRQs now NIC-local), the userspace A/B **flipped**: all-NIC-local (`NODE=1`) = **89.5 Gbps**
   vs unpinned 60 vs remote (`NODE=0`) 55 at N=32 — confirming "keep the whole receive pipeline

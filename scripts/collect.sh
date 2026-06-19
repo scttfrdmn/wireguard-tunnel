@@ -71,11 +71,29 @@ max_busy=$(echo "$mp" | awk '/^Average:/ && $2 ~ /^[0-9]+$/ {b=100-$NF; if(b>m)m
 # Top threads by %CPU during the window (thread rows in pidstat -t have TGID column "-").
 # This is the field that answers "which single thread is the bottleneck core running".
 top_threads="[]"
+# Per-thread-class %CPU rollup (in core-equivalents = %CPU/100), summed across all threads of
+# each class. Settles "is one stage dominating (serial) or is it distributed": compare
+# stage_decrypt vs stage_softirq vs stage_app. Classes by comm:
+#   napi/wg*         -> softirq (NAPI poll for the wg virtual device)
+#   ksoftirqd*       -> ksoftirqd (generic softirq backlog)
+#   *wg-crypt*       -> decrypt (ChaCha20-Poly1305 kernel workqueue) -- the heavy stage
+#   iperf3           -> app (userspace reader)  ;  fio -> app_fio (nvme-tcp workload)
+stage_decrypt=0; stage_softirq=0; stage_ksoftirqd=0; stage_app=0; stage_app_fio=0
 if [ -n "$pidlog" ] && [ -s "$pidlog" ]; then
   top_threads=$(awk '/^Average:/ && $3=="-" { pct=$(NF-2); comm=$NF; if (pct+0>5) print pct"\t"comm }' "$pidlog" \
     | sort -rn | head -8 \
     | awk -F'\t' 'BEGIN{printf "["} {gsub(/[\\"]/,"",$2); printf "%s{\"comm\":\"%s\",\"pct\":%.1f}", (NR>1?",":""), $2, $1} END{printf "]"}')
   [ -n "$top_threads" ] || top_threads="[]"
+  # sum %CPU/100 per class over ALL thread rows (not just top-8)
+  read -r stage_decrypt stage_softirq stage_ksoftirqd stage_app stage_app_fio < <(
+    awk '/^Average:/ && $3=="-" {
+      pct=$(NF-2); comm=$NF;
+      if (comm ~ /wg-crypt/)            dec+=pct;
+      else if (comm ~ /^napi\/wg/)      sirq+=pct;
+      else if (comm ~ /^ksoftirqd/)     ksd+=pct;
+      else if (comm ~ /iperf3/)         app+=pct;
+      else if (comm ~ /^fio/)           fio+=pct;
+    } END { printf "%.2f %.2f %.2f %.2f %.2f\n", dec/100, sirq/100, ksd/100, app/100, fio/100 }' "$pidlog")
 fi
 [ -n "$pidlog" ] && rm -f "$pidlog"
 
@@ -118,6 +136,11 @@ cat > "$OUT" <<JSON
   "util_band_50_90": ${band_50_90:-0},
   "util_band_90_100": ${band_90_100:-0},
   "top_threads": ${top_threads:-[]},
+  "stage_decrypt_ce": ${stage_decrypt:-0},
+  "stage_softirq_ce": ${stage_softirq:-0},
+  "stage_ksoftirqd_ce": ${stage_ksoftirqd:-0},
+  "stage_app_ce": ${stage_app:-0},
+  "stage_app_fio_ce": ${stage_app_fio:-0},
   "softirq_rx_top_core_share": $top_share,
   "bw_in_allowance_exceeded": $(d bw_in_allowance_exceeded),
   "bw_out_allowance_exceeded": $(d bw_out_allowance_exceeded),
