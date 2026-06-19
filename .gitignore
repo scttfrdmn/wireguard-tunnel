@@ -1,0 +1,27 @@
+# --- secrets: WireGuard private keys & exchanged pubkey manifests ---
+keys/
+wg-pub-*.txt
+
+# --- generated measurement output ---
+results/
+report.md
+report.csv
+
+# --- terraform state & local init artifacts (may contain IPs/secrets) ---
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+
+# --- build / scratch ---
+report/report
+.archive/
+*.tmp
+
+# --- OS / editor cruft ---
+.DS_Store
+*.swp

@@ -1,0 +1,4 @@
+# Resolve `source "$(dirname "$0")/common.sh"` relative to each script's own directory,
+# so shellcheck follows it instead of emitting SC1091.
+source-path=SCRIPTDIR
+external-sources=true
