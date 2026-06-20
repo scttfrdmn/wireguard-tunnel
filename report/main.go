@@ -60,6 +60,33 @@ func main() {
 			d.NodeA.SrdTx, dp.Classify(d))
 	}
 
+	// bidirectional breakdown: only if any datapoint has reverse flows
+	anyBidir := false
+	for _, d := range dps {
+		if d.IsBidir() {
+			anyBidir = true
+			break
+		}
+	}
+	if anyBidir {
+		fmt.Println("\n## Bidirectional (aggregate wire = A→B + B→A)")
+		fmt.Println("| mode | N | aggregate Gbps | A→B | B→A | core-equiv (A/B) | max util (A/B) | allowance fired? |")
+		fmt.Println("|------|---|----------------|-----|-----|------------------|----------------|------------------|")
+		for _, d := range dps {
+			if !d.IsBidir() {
+				continue
+			}
+			fired := "no (CPU-bound)"
+			if d.AllowanceFired() {
+				fired = "YES (network allowance)"
+			}
+			fmt.Printf("| %s | %d | **%.1f** | %.1f | %.1f | %.1f/%.1f | %.0f/%.0f | %s |\n",
+				d.Mode, d.N, d.Gbps, d.GbpsA2B, d.GbpsB2A,
+				d.NodeA.BusyCoreEquiv, d.NodeB.BusyCoreEquiv,
+				d.NodeA.MaxCoreUtil, d.NodeB.MaxCoreUtil, fired)
+		}
+	}
+
 	// hot-thread attribution: only print if any datapoint captured it (new instrumentation)
 	anyThreads := false
 	for _, d := range dps {

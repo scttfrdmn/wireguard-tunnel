@@ -93,9 +93,11 @@ type Datapoint struct {
 	N       int     `json:"n_tunnels"`
 	Mode    string  `json:"mode"`
 	MTU     int     `json:"wg_mtu"`
-	Gbps    float64 `json:"throughput_gbps"`
-	NvmeGBs float64 `json:"nvme_GBps"` // set only by measure-nvme-tcp.sh; 0 for the iperf sweep
-	RW      string  `json:"rw"`        // "read"/"write" for nvme-tcp datapoints, else ""
+	Gbps    float64 `json:"throughput_gbps"` // aggregate wire (a2b+b2a under BIDIR; else just a2b)
+	GbpsA2B float64 `json:"throughput_gbps_a2b"`
+	GbpsB2A float64 `json:"throughput_gbps_b2a"` // >0 only for bidirectional datapoints
+	NvmeGBs float64 `json:"nvme_GBps"`           // set only by measure-nvme-tcp.sh; 0 for the iperf sweep
+	RW      string  `json:"rw"`                  // "read"/"write" for nvme-tcp datapoints, else ""
 	NodeA   Node    `json:"node_a"`
 	NodeB   Node    `json:"node_b"`
 }
@@ -118,6 +120,16 @@ func Classify(d Datapoint) string {
 	default:
 		return "linear region (unbound)"
 	}
+}
+
+// IsBidir reports whether this is a bidirectional datapoint (reverse flows present).
+func (d Datapoint) IsBidir() bool { return d.GbpsB2A > 0 }
+
+// AllowanceFired reports whether any AWS bandwidth/PPS allowance counter fired on either node
+// — i.e. whether the knee is a network allowance (true) vs CPU/other (false).
+func (d Datapoint) AllowanceFired() bool {
+	a, b := d.NodeA, d.NodeB
+	return a.BwIn+a.BwOut+a.Pps+b.BwIn+b.BwOut+b.Pps > 0
 }
 
 // BusyCores returns the larger of the two nodes' busy-core counts (the sender and receiver

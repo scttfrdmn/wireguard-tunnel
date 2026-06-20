@@ -22,6 +22,15 @@ REMOTE_HOST="${REMOTE_HOST:?set REMOTE_HOST to B private ip}"
 SSH="ssh -o StrictHostKeyChecking=no ubuntu@${REMOTE_HOST}"
 SDIR="$(cd "$(dirname "$0")" && pwd)"
 
+# BIDIR=1 — full-duplex: in addition to the A->B flows, drive B->A flows on a disjoint iperf
+# port block (REV_BASE), so each node both sends and receives simultaneously. The headline is
+# aggregate wire = A->B + B->A. Requires reverse iperf3 servers bound to A's tunnel IPs (.1) —
+# start them with: ./scripts/server-up.sh <N> reverse   (on A, before this sweep).
+# NOT iperf3 --bidir: paired one-way flows keep per-direction attribution clean and avoid
+# forward+reverse sharing one peer's serial crypto pipeline.
+BIDIR="${BIDIR:-}"
+REV_BASE="${REV_BASE:-$((IPERF_BASE_PORT + 1000))}"   # reverse-flow iperf ports (B->A)
+
 # Guard: the recorded wg_mtu must match the live tunnel, or the datapoint is mislabeled.
 live_mtu=$(cat "/sys/class/net/$(tun_dev 0)/mtu" 2>/dev/null || echo "")
 if [ -n "$live_mtu" ] && [ "$live_mtu" != "$WG_MTU" ]; then
@@ -34,14 +43,24 @@ for N in $SWEEP; do
 
   # idempotency: clear stale per-flow output so a re-run with a smaller N can't leave
   # orphaned flow*.json files that would inflate the aggregate.
-  rm -f "$outdir"/flow*.json "$outdir/node_a.json" "$outdir/node_b.json"
+  rm -f "$outdir"/flow*.json "$outdir"/rev*.json "$outdir/node_a.json" "$outdir/node_b.json"
 
-  # launch one pinned client per tunnel
+  # forward A->B: one client per tunnel on A
   pids=(); for i in $(seq 0 $((N-1))); do
     src=$(tun_ip "$i" 1); dst=$(tun_ip "$i" 2); port=$((IPERF_BASE_PORT + i))
     iperf3 -c "$dst" -B "$src" -p "$port" -t "$DUR" -P 1 -J > "$outdir/flow$i.json" 2>/dev/null &
     pids+=($!)
   done
+
+  # reverse B->A (BIDIR only): drive B's clients toward A's reverse servers (bound to .1),
+  # in parallel. Run on B via ssh; JSON comes back over stdout per flow into rev<i>.json.
+  if [ -n "$BIDIR" ]; then
+    for i in $(seq 0 $((N-1))); do
+      rsrc=$(tun_ip "$i" 2); rdst=$(tun_ip "$i" 1); rport=$((REV_BASE + i))
+      $SSH "iperf3 -c $rdst -B $rsrc -p $rport -t $DUR -P 1 -J" > "$outdir/rev$i.json" 2>/dev/null &
+      pids+=($!)
+    done
+  fi
 
   # collect on both nodes during the window (slightly shorter than load)
   cwin=$((DUR>6 ? DUR-4 : DUR))
@@ -53,17 +72,28 @@ for N in $SWEEP; do
   wait "${pids[@]}" || true
   wait "$ca" "$cb" 2>/dev/null || true
 
-  # aggregate throughput across the N flows
-  gbps=$(jq -s '[.[].end.sum_sent.bits_per_second]|add/1e9' "$outdir"/flow*.json)
+  # per-direction aggregate throughput
+  gbps_a2b=$(jq -s '[.[].end.sum_sent.bits_per_second]|add/1e9' "$outdir"/flow*.json)
+  if [ -n "$BIDIR" ] && ls "$outdir"/rev*.json >/dev/null 2>&1; then
+    gbps_b2a=$(jq -s '[.[].end.sum_sent.bits_per_second]|add/1e9' "$outdir"/rev*.json 2>/dev/null || echo 0)
+  else
+    gbps_b2a=0
+  fi
+  gbps=$(jq -n --argjson f "$gbps_a2b" --argjson r "$gbps_b2a" '$f + $r')   # aggregate wire
 
   jq -n \
     --argjson n "$N" --arg mode "$MODE" --argjson mtu "$WG_MTU" --argjson dur "$DUR" \
-    --argjson gbps "$gbps" \
+    --argjson gbps "$gbps" --argjson a2b "$gbps_a2b" --argjson b2a "$gbps_b2a" \
     --slurpfile a "$outdir/node_a.json" \
     --slurpfile b "$outdir/node_b.json" \
     '{n_tunnels:$n, mode:$mode, wg_mtu:$mtu, duration_s:$dur, throughput_gbps:$gbps,
+      throughput_gbps_a2b:$a2b, throughput_gbps_b2a:$b2a,
       node_a:$a[0], node_b:$b[0]}' > "$outdir/datapoint.json"
 
-  log "N=$N -> $(printf '%.1f' "$gbps") Gbps  (datapoint: $outdir/datapoint.json)"
+  if [ -n "$BIDIR" ]; then
+    log "N=$N -> $(printf '%.1f' "$gbps") Gbps aggregate ($(printf '%.1f' "$gbps_a2b") a2b + $(printf '%.1f' "$gbps_b2a") b2a)  ($outdir/datapoint.json)"
+  else
+    log "N=$N -> $(printf '%.1f' "$gbps") Gbps  (datapoint: $outdir/datapoint.json)"
+  fi
 done
 log "sweep '$MODE' complete. Run: (cd report && go run . $RESULTS_DIR)"

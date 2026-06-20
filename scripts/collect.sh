@@ -77,7 +77,9 @@ top_threads="[]"
 # matching — otherwise the ^napi / ^ksoftirqd anchors silently never match. Classes by comm:
 #   napi/wg*         -> softirq   (NAPI poll for the wg virtual device)
 #   ksoftirqd*       -> ksoftirqd (generic softirq backlog)
-#   *wg-crypt*       -> decrypt   (ChaCha20-Poly1305 kernel workqueue) -- the heavy stage
+#   *wg-crypt*       -> crypt     (ChaCha20-Poly1305 WQ; ENCRYPT on a TX node, DECRYPT on RX,
+#                                  ~symmetric per byte — emitted as both stage_crypt_ce and the
+#                                  legacy stage_decrypt_ce for back-compat) -- the heavy stage
 #   *mm_percpu_wq*   -> memmgmt   (page alloc/free churn; surprisingly large at high N, run 5)
 #   iperf3           -> app (userspace reader)  ;  fio -> app_fio (nvme-tcp workload)
 stage_decrypt=0; stage_softirq=0; stage_ksoftirqd=0; stage_memmgmt=0; stage_app=0; stage_app_fio=0
@@ -139,6 +141,7 @@ cat > "$OUT" <<JSON
   "util_band_50_90": ${band_50_90:-0},
   "util_band_90_100": ${band_90_100:-0},
   "top_threads": ${top_threads:-[]},
+  "stage_crypt_ce": ${stage_decrypt:-0},
   "stage_decrypt_ce": ${stage_decrypt:-0},
   "stage_softirq_ce": ${stage_softirq:-0},
   "stage_ksoftirqd_ce": ${stage_ksoftirqd:-0},
