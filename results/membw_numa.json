@@ -1,9 +1,14 @@
 {
   "test": "membw_numa",
   "nodes": 2,
-  "threads_per_cell": 96,
-  "cells_GBps": { "1-1":382.2,"1-0":68.2,"0-0":381.0,"0-1":68.6 },
-  "local_avg_GBps": 381.6,
-  "remote_avg_GBps": 68.4,
-  "remote_penalty_pct": 90.0
+  "cores_per_node": 96,
+  "full_thread_cells_GBps": { "1-1":378.5,"1-0":68.2,"0-0":384.2,"0-1":68.9 },
+  "thread_sweep": [{"threads":1,"local_GBps":35.9,"remote_GBps":20.0},{"threads":8,"local_GBps":266.7,"remote_GBps":53.7},{"threads":24,"local_GBps":346.0,"remote_GBps":70.6},{"threads":48,"local_GBps":381.6,"remote_GBps":69.4},{"threads":96,"local_GBps":384.8,"remote_GBps":69.0}],
+  "latency_ns": { "1-1":137.37,"1-0":301.41,"0-0":140.85,"0-1":307.09 },
+  "local_bw_GBps": 384.2,
+  "remote_bw_GBps": 68.9,
+  "remote_bw_penalty_pct": 90.0,
+  "local_latency_ns": 140.85,
+  "remote_latency_ns": 307.09,
+  "remote_latency_ratio": 2.18
 }

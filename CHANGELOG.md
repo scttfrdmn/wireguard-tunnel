@@ -11,6 +11,16 @@ schema, report columns) may change between minor versions.
 ## [Unreleased]
 
 ### Added
+- **Run 5 measured results — node-split hits 95.3 Gbps (project best, near 100).** Placement
+  A/B at N=32: NIC-local-only 79.6 / align 79.3 / rps_on 79.0 (neutral, as predicted) /
+  **node-split (tunnels across BOTH NUMA nodes) 95.3** at **2.56 Gbps/core-equiv** (2× the
+  79.6 layout's 1.28; receiver no longer pegged, 79% peak). Cause: NIC-local-only was
+  single-memory-controller/contention bound (hot threads = wg-crypt kworkers **+ mm_percpu_wq**
+  churn); splitting relieves it. Settled the "90% remote-BW" question with the thread-sweep:
+  it's **interconnect saturation** (remote BW flat at ~69 GB/s from 24 threads up), not a
+  per-access penalty (single-access latency only **2.2×**, 307 vs 141 ns). Confirmed RPS
+  neutral and the wg-crypt WQ is per-CPU (not sysfs-steerable). This **contradicts the
+  pre-run hypothesis** that node-split would be a dead end.
 - **Pipelining / NUMA-placement toolkit (offline build, gated on a live run).** Per a design
   review (PIPELINING-DESIGN.md), built every placement lever so the next run *measures* the
   winner rather than assuming:

@@ -1,63 +1,63 @@
 {
-  "n_tunnels": 16,
-  "mode": "irqlocal_userN1",
+  "n_tunnels": 24,
+  "mode": "rps_on",
   "wg_mtu": 8921,
   "duration_s": 20,
-  "throughput_gbps": 75.06897196835924,
+  "throughput_gbps": 77.10709873431463,
   "node_a": {
     "host": "ip-10-10-1-98",
     "duration_s": 16,
-    "tx_pps": 1059548,
+    "tx_pps": 1073449,
     "busy_cores": 0,
-    "max_core_util": 23.8,
+    "max_core_util": 26.2,
     "ncores": 192,
-    "busy_core_equiv": 20.08,
+    "busy_core_equiv": 19.91,
     "cores_gt50": 0,
     "cores_gt90": 0,
-    "util_band_0_10": 122,
-    "util_band_10_50": 70,
+    "util_band_0_10": 123,
+    "util_band_10_50": 69,
     "util_band_50_90": 0,
     "util_band_90_100": 0,
     "top_threads": [
       {
-        "comm": "|__napi/wg9-0",
-        "pct": 25.1
+        "comm": "|__napi/wg20-0",
+        "pct": 20.6
       },
       {
-        "comm": "|__napi/wg7-0",
-        "pct": 24.2
+        "comm": "|__napi/wg9-0",
+        "pct": 19.1
       },
       {
         "comm": "|__napi/wg14-0",
-        "pct": 23.9
-      },
-      {
-        "comm": "|__napi/wg8-0",
-        "pct": 23.7
-      },
-      {
-        "comm": "|__napi/wg4-0",
-        "pct": 23.4
+        "pct": 17.8
       },
       {
         "comm": "|__napi/wg0-0",
-        "pct": 23.4
+        "pct": 17.1
+      },
+      {
+        "comm": "|__napi/wg22-0",
+        "pct": 16.8
+      },
+      {
+        "comm": "|__napi/wg7-0",
+        "pct": 16.5
+      },
+      {
+        "comm": "|__napi/wg17-0",
+        "pct": 15.9
       },
       {
         "comm": "|__napi/wg13-0",
-        "pct": 22.7
-      },
-      {
-        "comm": "|__napi/wg1-0",
-        "pct": 22.4
+        "pct": 15.4
       }
     ],
-    "stage_decrypt_ce": 14.82,
+    "stage_decrypt_ce": 14.81,
     "stage_softirq_ce": 0.00,
     "stage_ksoftirqd_ce": 0.00,
-    "stage_app_ce": 2.20,
+    "stage_app_ce": 2.01,
     "stage_app_fio_ce": 0.00,
-    "softirq_rx_top_core_share": 0.110,
+    "softirq_rx_top_core_share": 0.083,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
@@ -71,57 +71,57 @@
   "node_b": {
     "host": "ip-10-10-1-235",
     "duration_s": 16,
-    "tx_pps": 119210,
+    "tx_pps": 43682,
     "busy_cores": 5,
-    "max_core_util": 99.9,
+    "max_core_util": 100.0,
     "ncores": 192,
-    "busy_core_equiv": 41.40,
-    "cores_gt50": 21,
+    "busy_core_equiv": 55.45,
+    "cores_gt50": 30,
     "cores_gt90": 5,
     "util_band_0_10": 0,
-    "util_band_10_50": 171,
-    "util_band_50_90": 16,
+    "util_band_10_50": 162,
+    "util_band_50_90": 25,
     "util_band_90_100": 5,
     "top_threads": [
       {
-        "comm": "|__iperf3",
-        "pct": 38.0
+        "comm": "|__kworker/123:10-wg-crypt-wg20",
+        "pct": 17.1
       },
       {
-        "comm": "|__iperf3",
-        "pct": 37.6
+        "comm": "|__kworker/126:6-wg-crypt-wg20",
+        "pct": 14.9
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.9
+        "comm": "|__ksoftirqd/100",
+        "pct": 14.1
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.7
+        "comm": "|__kworker/121:4-wg-crypt-wg18",
+        "pct": 13.6
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.4
+        "comm": "|__kworker/120:3-wg-crypt-wg16",
+        "pct": 13.4
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.4
+        "comm": "|__ksoftirqd/99",
+        "pct": 13.4
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.4
+        "comm": "|__ksoftirqd/119",
+        "pct": 13.3
       },
       {
-        "comm": "|__iperf3",
-        "pct": 35.9
+        "comm": "|__kworker/127:4-mm_percpu_wq",
+        "pct": 13.3
       }
     ],
-    "stage_decrypt_ce": 30.78,
+    "stage_decrypt_ce": 21.58,
     "stage_softirq_ce": 0.00,
     "stage_ksoftirqd_ce": 0.00,
-    "stage_app_ce": 5.50,
+    "stage_app_ce": 0.00,
     "stage_app_fio_ce": 0.00,
-    "softirq_rx_top_core_share": 0.096,
+    "softirq_rx_top_core_share": 0.044,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,

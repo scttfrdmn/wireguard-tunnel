@@ -7,5 +7,8 @@
   "instance_store_nvme_nodes": "0,1",
   "nic_pci": "0000:97:00.0",
   "nvme_sharing_nic_node": 8,
+  "rxq_count": 32,
+  "rps_enabled": 0,
+  "rx_buffer_node": "1",
   "verdict": "multi-node, NIC on node 1 — keep IRQs (NIC-local already), softirq, decrypt AND userspace on node 1 (measured: NODE=1 pin-workers wins)"
 }

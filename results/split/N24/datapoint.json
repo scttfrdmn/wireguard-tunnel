@@ -1,63 +1,63 @@
 {
-  "n_tunnels": 16,
-  "mode": "irqlocal_userN1",
+  "n_tunnels": 24,
+  "mode": "split",
   "wg_mtu": 8921,
   "duration_s": 20,
-  "throughput_gbps": 75.06897196835924,
+  "throughput_gbps": 94.11044147920343,
   "node_a": {
     "host": "ip-10-10-1-98",
     "duration_s": 16,
-    "tx_pps": 1059548,
+    "tx_pps": 1218266,
     "busy_cores": 0,
-    "max_core_util": 23.8,
+    "max_core_util": 23.0,
     "ncores": 192,
-    "busy_core_equiv": 20.08,
+    "busy_core_equiv": 22.84,
     "cores_gt50": 0,
     "cores_gt90": 0,
-    "util_band_0_10": 122,
-    "util_band_10_50": 70,
+    "util_band_0_10": 18,
+    "util_band_10_50": 174,
     "util_band_50_90": 0,
     "util_band_90_100": 0,
     "top_threads": [
       {
         "comm": "|__napi/wg9-0",
-        "pct": 25.1
-      },
-      {
-        "comm": "|__napi/wg7-0",
-        "pct": 24.2
+        "pct": 26.7
       },
       {
         "comm": "|__napi/wg14-0",
-        "pct": 23.9
+        "pct": 24.8
       },
       {
-        "comm": "|__napi/wg8-0",
-        "pct": 23.7
+        "comm": "|__napi/wg19-0",
+        "pct": 24.4
       },
       {
-        "comm": "|__napi/wg4-0",
-        "pct": 23.4
+        "comm": "|__napi/wg7-0",
+        "pct": 21.2
+      },
+      {
+        "comm": "|__napi/wg12-0",
+        "pct": 19.4
+      },
+      {
+        "comm": "|__napi/wg17-0",
+        "pct": 18.9
       },
       {
         "comm": "|__napi/wg0-0",
-        "pct": 23.4
+        "pct": 18.9
       },
       {
-        "comm": "|__napi/wg13-0",
-        "pct": 22.7
-      },
-      {
-        "comm": "|__napi/wg1-0",
-        "pct": 22.4
+        "comm": "|__iperf3",
+        "pct": 17.6
       }
     ],
-    "stage_decrypt_ce": 14.82,
+    "stage_decrypt_ce": 16.98,
     "stage_softirq_ce": 0.00,
     "stage_ksoftirqd_ce": 0.00,
-    "stage_app_ce": 2.20,
+    "stage_app_ce": 2.29,
     "stage_app_fio_ce": 0.00,
-    "softirq_rx_top_core_share": 0.110,
+    "softirq_rx_top_core_share": 0.076,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,
@@ -71,57 +71,57 @@
   "node_b": {
     "host": "ip-10-10-1-235",
     "duration_s": 16,
-    "tx_pps": 119210,
-    "busy_cores": 5,
-    "max_core_util": 99.9,
+    "tx_pps": 69004,
+    "busy_cores": 14,
+    "max_core_util": 100.0,
     "ncores": 192,
-    "busy_core_equiv": 41.40,
-    "cores_gt50": 21,
-    "cores_gt90": 5,
+    "busy_core_equiv": 54.87,
+    "cores_gt50": 29,
+    "cores_gt90": 14,
     "util_band_0_10": 0,
-    "util_band_10_50": 171,
-    "util_band_50_90": 16,
-    "util_band_90_100": 5,
+    "util_band_10_50": 163,
+    "util_band_50_90": 15,
+    "util_band_90_100": 14,
     "top_threads": [
       {
-        "comm": "|__iperf3",
-        "pct": 38.0
+        "comm": "|__ksoftirqd/12",
+        "pct": 12.8
+      },
+      {
+        "comm": "|__ksoftirqd/101",
+        "pct": 12.3
       },
       {
         "comm": "|__iperf3",
-        "pct": 37.6
+        "pct": 11.8
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.9
+        "comm": "|__ksoftirqd/111",
+        "pct": 11.4
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.7
+        "comm": "|__ksoftirqd/11",
+        "pct": 11.0
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.4
+        "comm": "|__ksoftirqd/107",
+        "pct": 10.6
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.4
+        "comm": "|__pidstat",
+        "pct": 9.7
       },
       {
-        "comm": "|__iperf3",
-        "pct": 36.4
-      },
-      {
-        "comm": "|__iperf3",
-        "pct": 35.9
+        "comm": "|__ksoftirqd/104",
+        "pct": 9.7
       }
     ],
-    "stage_decrypt_ce": 30.78,
+    "stage_decrypt_ce": 17.87,
     "stage_softirq_ce": 0.00,
     "stage_ksoftirqd_ce": 0.00,
-    "stage_app_ce": 5.50,
+    "stage_app_ce": 0.12,
     "stage_app_fio_ce": 0.00,
-    "softirq_rx_top_core_share": 0.096,
+    "softirq_rx_top_core_share": 0.083,
     "bw_in_allowance_exceeded": 0,
     "bw_out_allowance_exceeded": 0,
     "pps_allowance_exceeded": 0,

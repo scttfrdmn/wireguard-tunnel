@@ -238,3 +238,29 @@ stubbed on mac). NO SPEND. Plan file: ~/.claude/plans/cuddly-sprouting-liskov.md
 
 ### Next: live run (gated) — Phase-0 probes, settle Story A/B via stage rollup, membw thread
 ### sweep, then labelled sweeps: irqlocal_userN1 baseline -> align -> rfs -> rps_on -> split.
+
+## 2026-06-20 — Session 7: live placement run (run 5) — NODE-SPLIT WINS at 95.3 Gbps
+
+Authorized spend. us-west-2d Spot $2.37/inst-hr, IP->47.150.84.16. Ran the placement toolkit
+built in session 6.
+
+Phase-0 free probes: RPS off, 32 rxq, rx buffers node 1; wg-crypt WQ is PER-CPU (kworkers
+exist, no /sys/.../workqueue entry) -> not steerable, placement follows IRQ core (confirms
+why IRQ pinning already captured it).
+
+membw thread-sweep ANSWERED the 90% question: remote BW plateaus ~69 GB/s by 24 threads (flat
+to 96) = INTERCONNECT SATURATION; single-access latency only 2.18x (307 vs 141 ns) ~ SLIT
+10:20. So moderate cross-node hand-offs are cheap; only bulk streaming hits the wall.
+
+Lever sweep (N=32): irqlocal_userN1 79.6 / align 79.3 / rps_on 79.0 (neutral) /
+**split 95.3 Gbps** @ 2.56 Gbps/core-equiv (vs 1.28), receiver 79% peak (not pegged), 37
+core-equiv vs 62. NODE-SPLIT is the winner — contradicts the design-review dead-end
+prediction. WHY: NIC-local-only was single-mem-controller bound (hot: wg-crypt + mm_percpu_wq
+churn ~21% each); splitting across both nodes' mem subsystems relieves it; cross-node cheap.
+
+Pulled per-mode (verified before destroy — run-4 lesson); report 65 dp/19 modes; updated
+write-up headline+placement section+run log, CHANGELOG, memory. terraform destroy complete,
+key deleted, billing stopped. ~35 min, <$6.
+
+### Next options: tighten collect.sh stage rollup (softirq/app under-counted); push split toward
+### 100 (finer N, split ratio other than 50/50, NVMe over split); or call it — 95.3 is near-wall.

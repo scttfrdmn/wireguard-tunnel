@@ -1,0 +1,72 @@
+{
+  "n_tunnels": 32,
+  "mode": "rps_on",
+  "wg_mtu": 8921,
+  "duration_s": 20,
+  "throughput_gbps": 78.98147711710075,
+  "node_a": {
+    "host": "ip-10-10-1-98",
+    "duration_s": 16,
+    "tx_pps": 1103507,
+    "busy_cores": 0,
+    "max_core_util": 17.6,
+    "ncores": 192,
+    "busy_core_equiv": 20.47,
+    "cores_gt50": 0,
+    "cores_gt90": 0,
+    "util_band_0_10": 90,
+    "util_band_10_50": 102,
+    "util_band_50_90": 0,
+    "util_band_90_100": 0,
+    "top_threads": [
+      {
+        "comm": "|__napi/wg31-0",
+        "pct": 18.3
+      },
+      {
+        "comm": "|__napi/wg9-0",
+        "pct": 15.2
+      },
+      {
+        "comm": "|__napi/wg6-0",
+        "pct": 14.8
+      },
+      {
+        "comm": "|__napi/wg19-0",
+        "pct": 14.5
+      },
+      {
+        "comm": "|__napi/wg13-0",
+        "pct": 14.2
+      },
+      {
+        "comm": "|__napi/wg7-0",
+        "pct": 14.2
+      },
+      {
+        "comm": "|__napi/wg14-0",
+        "pct": 13.9
+      },
+      {
+        "comm": "|__napi/wg17-0",
+        "pct": 12.8
+      }
+    ],
+    "stage_decrypt_ce": 15.39,
+    "stage_softirq_ce": 0.00,
+    "stage_ksoftirqd_ce": 0.00,
+    "stage_app_ce": 1.93,
+    "stage_app_fio_ce": 0.00,
+    "softirq_rx_top_core_share": 0.073,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 0,
+    "ena_srd_rx_pkts": 0,
+    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_resource_utilization": 0
+  },
+  "node_b": null
+}
