@@ -264,3 +264,26 @@ key deleted, billing stopped. ~35 min, <$6.
 
 ### Next options: tighten collect.sh stage rollup (softirq/app under-counted); push split toward
 ### 100 (finer N, split ratio other than 50/50, NVMe over split); or call it — 95.3 is near-wall.
+
+## 2026-06-20 — Session 8: GOAL MET — 103.2 Gbps (run 6) + collect.sh rollup fix
+
+Did #2 (offline) then #1 (live), per user "1 & 2, can't walk away when so close".
+
+#2 collect.sh stage-rollup fix: pidstat -t prefixes thread comms with "|__", which broke the
+^napi/^ksoftirqd anchors (read 0). Stripped the prefix; added mm_percpu_wq "memmgmt" class.
+report+datapoint gain stage_memmgmt_ce. Validated; committed.
+
+#1 push-to-100 (us-west-2d Spot, N_MAX=64, IP unchanged):
+- node-split sweep: N=32 99.3 / N=40 **103.2** / N=48 100.3 / N=64 103.1 Gbps.
+  **CROSSES 100 at N=40 — PROJECT GOAL MET.** No AWS allowance fired; receiver CPU-saturated
+  (100% peak, 70-89 core-equiv) = aggregate ChaCha20 wall across all 192 cores.
+- Stage rollup fix CONFIRMED working live: all classes populate (N=40: dec=22.1 sirq=1.6
+  ksd=1.4 mm=1.2 app=0.2). NIC has 32 HW queues; 64 tunnels share 2:1, scales fine (CPU-bound).
+- Full progression: 60->77->89.5->95.3->103.2 Gbps via placement alone; network never bound.
+
+Bumped VERSION 0.3.0; CHANGELOG [0.3.0] release. report 69 dp/20 modes. Pulled per-mode +
+verified before destroy; terraform destroy complete, key deleted, billing stopped. ~40 min, <$7.
+
+### Status: KICKOFF headline deliverable achieved (>=100 Gbps, every knee attributed). Remaining
+### optional: NVMe-over-split workload at 100G; finer split ratios; the original write-up's
+### remaining "not yet measured" rows if any.

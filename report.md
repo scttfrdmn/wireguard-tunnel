@@ -101,6 +101,10 @@
 | split | 16 | 74.6 | - | 19.9/42.2 | 1.77 | 24/100 | 0 | CPU / crypto |
 | split | 24 | 94.1 | - | 22.8/54.9 | 1.72 | 23/100 | 0 | CPU / crypto |
 | split | 32 | 95.3 | - | 23.4/37.2 | 2.56 | 23/79 | 0 | linear region (unbound) |
+| split64 | 32 | 99.3 | - | 27.9/65.5 | 1.52 | 23/97 | 0 | CPU / crypto |
+| split64 | 40 | 103.2 | - | 26.5/70.3 | 1.47 | 24/100 | 0 | CPU / crypto |
+| split64 | 48 | 100.3 | - | 25.3/0.0 | 3.97 | 21/0 | 0 | linear region (unbound) |
+| split64 | 64 | 103.1 | - | 26.0/89.5 | 1.15 | 21/100 | 0 | CPU / crypto |
 
 ## Hot threads during load (top by %CPU)
 | mode | N | node A (sender/encrypt) | node B (receiver/decrypt) |
@@ -164,21 +168,28 @@
 | split | 16 | |__napi/wg9-0:29 |__napi/wg8-0:26 |__napi/wg14-0:26 |__napi/wg4-0:24 | |__iperf3:52 |__iperf3:51 |__iperf3:51 |__iperf3:51 |
 | split | 24 | |__napi/wg9-0:27 |__napi/wg14-0:25 |__napi/wg19-0:24 |__napi/wg7-0:21 | |__ksoftirqd/12:13 |__ksoftirqd/101:12 |__iperf3:12 |__ksoftirqd/111:11 |
 | split | 32 | |__napi/wg19-0:23 |__napi/wg9-0:20 |__napi/wg29-0:20 |__napi/wg14-0:18 | |__iperf3:24 |__napi/wg16-0:14 |__pidstat:12 |__ksoftirqd/14:10 |
+| split64 | 32 | |__napi/wg28-0:26 |__napi/wg9-0:25 |__napi/wg30-0:24 |__napi/wg20-0:24 | |__ksoftirqd/9:13 |__ksoftirqd/96:12 |__ksoftirqd/109:12 |__ksoftirqd/101:11 |
+| split64 | 40 | |__napi/wg9-0:24 |__napi/wg28-0:23 |__napi/wg22-0:22 |__napi/wg20-0:21 | |__iperf3:21 |__napi/wg32-0:14 |__ksoftirqd/109:13 |__ksoftirqd/96:13 |
+| split64 | 48 | |__napi/wg28-0:19 |__napi/wg30-0:17 |__napi/wg20-0:17 |__napi/wg22-0:16 | - |
+| split64 | 64 | |__pidstat:12 |__napi/wg59-0:11 |__napi/wg57-0:11 |__napi/wg62-0:11 | |__iperf3:23 |__napi/wg32-0:15 |__ksoftirqd/109:12 |__ksoftirqd/104:12 |
 
-## Receiver stage cost (core-equivalents: dec=decrypt sirq=napi ksd=ksoftirqd app=iperf3)
+## Receiver stage cost (core-equivalents: dec=decrypt sirq=napi ksd=ksoftirqd mm=mm_percpu_wq app=iperf3)
 | mode | N | Gbps | receiver (node B) stage breakdown |
 |------|---|------|-----------------------------------|
-| align | 16 | 68.5 | dec=32.1 sirq=0.0 ksd=0.0 app=5.5 |
-| align | 24 | 75.8 | dec=17.3 sirq=0.0 ksd=0.0 app=0.0 |
-| align | 32 | 79.3 | dec=46.5 sirq=0.0 ksd=0.0 app=10.0 |
-| irqlocal_userN1 | 16 | 75.1 | dec=30.8 sirq=0.0 ksd=0.0 app=5.5 |
-| irqlocal_userN1 | 24 | 77.1 | dec=16.9 sirq=0.0 ksd=0.0 app=0.0 |
-| irqlocal_userN1 | 32 | 79.6 | dec=31.2 sirq=0.0 ksd=0.0 app=0.0 |
-| rps_on | 16 | 73.4 | dec=34.8 sirq=0.0 ksd=0.0 app=7.6 |
-| rps_on | 24 | 77.1 | dec=21.6 sirq=0.0 ksd=0.0 app=0.0 |
-| split | 16 | 74.6 | dec=30.2 sirq=0.0 ksd=0.0 app=7.1 |
-| split | 24 | 94.1 | dec=17.9 sirq=0.0 ksd=0.0 app=0.1 |
-| split | 32 | 95.3 | dec=17.8 sirq=0.0 ksd=0.0 app=0.3 |
+| align | 16 | 68.5 | dec=32.1 sirq=0.0 ksd=0.0 mm=0.0 app=5.5 |
+| align | 24 | 75.8 | dec=17.3 sirq=0.0 ksd=0.0 mm=0.0 app=0.0 |
+| align | 32 | 79.3 | dec=46.5 sirq=0.0 ksd=0.0 mm=0.0 app=10.0 |
+| irqlocal_userN1 | 16 | 75.1 | dec=30.8 sirq=0.0 ksd=0.0 mm=0.0 app=5.5 |
+| irqlocal_userN1 | 24 | 77.1 | dec=16.9 sirq=0.0 ksd=0.0 mm=0.0 app=0.0 |
+| irqlocal_userN1 | 32 | 79.6 | dec=31.2 sirq=0.0 ksd=0.0 mm=0.0 app=0.0 |
+| rps_on | 16 | 73.4 | dec=34.8 sirq=0.0 ksd=0.0 mm=0.0 app=7.6 |
+| rps_on | 24 | 77.1 | dec=21.6 sirq=0.0 ksd=0.0 mm=0.0 app=0.0 |
+| split | 16 | 74.6 | dec=30.2 sirq=0.0 ksd=0.0 mm=0.0 app=7.1 |
+| split | 24 | 94.1 | dec=17.9 sirq=0.0 ksd=0.0 mm=0.0 app=0.1 |
+| split | 32 | 95.3 | dec=17.8 sirq=0.0 ksd=0.0 mm=0.0 app=0.3 |
+| split64 | 32 | 99.3 | dec=16.7 sirq=1.4 ksd=1.4 mm=3.8 app=0.0 |
+| split64 | 40 | 103.2 | dec=22.1 sirq=1.6 ksd=1.4 mm=1.2 app=0.2 |
+| split64 | 64 | 103.1 | dec=21.4 sirq=1.9 ksd=1.4 mm=1.6 app=0.2 |
 
 ## Per-mode summary
 - **align:** peak 79.3 Gbps; first knee at N=16 (CPU / crypto)
@@ -200,3 +211,4 @@
 - **placement_pinned:** peak 77.2 Gbps; first knee at N=1 (single RX queue (need more tunnels))
 - **rps_on:** peak 79.0 Gbps; first knee at N=16 (CPU / crypto)
 - **split:** peak 95.3 Gbps; first knee at N=16 (CPU / crypto)
+- **split64:** peak 103.2 Gbps; first knee at N=32 (CPU / crypto)

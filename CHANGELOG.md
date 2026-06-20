@@ -10,7 +10,20 @@ schema, report columns) may change between minor versions.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-20
+
+**Project goal met: ≥100 Gbps of encrypted WireGuard throughput, measured.** Node-split
+placement crossed 100 Gbps at N=40 (**103.2 Gbps**) and held ~100–103 through N=64, no AWS
+allowance fired — the ceiling is aggregate receive-side ChaCha20 CPU, not the network.
+
 ### Added
+- **Run 6 — crossed 100 Gbps (103.2 at N=40).** N_MAX=64 node-split sweep: N=32 99.3 / N=40
+  103.2 / N=48 100.3 / N=64 103.1 Gbps. Clean attribution (no allowance; receiver CPU-saturated
+  100% peak). Progression across the project: 60 (unpinned) → 77 (distinct-core) → 89.5
+  (all-NIC-local) → 95.3 (split N=32) → **103.2 (split N=40)**.
+- **`collect.sh` stage rollup fix** — stripped the `|__` pidstat thread-prefix that silently
+  zeroed the softirq/ksoftirqd classes; added a `mm_percpu_wq` memmgmt class. Attribution now
+  complete (report + `datapoint` gain `stage_memmgmt_ce`).
 - **Run 5 measured results — node-split hits 95.3 Gbps (project best, near 100).** Placement
   A/B at N=32: NIC-local-only 79.6 / align 79.3 / rps_on 79.0 (neutral, as predicted) /
   **node-split (tunnels across BOTH NUMA nodes) 95.3** at **2.56 Gbps/core-equiv** (2× the
@@ -200,6 +213,7 @@ First measured run. Harness completed, hardened on real hardware, and exercised 
 Initial import of the wg-saturate measurement harness (terraform + scripts + Go report),
 as received. Baseline for all subsequent changes.
 
-[Unreleased]: https://example.invalid/wg-saturate/compare/v0.2.0...HEAD
+[Unreleased]: https://example.invalid/wg-saturate/compare/v0.3.0...HEAD
+[0.3.0]: https://example.invalid/wg-saturate/compare/v0.2.0...v0.3.0
 [0.2.0]: https://example.invalid/wg-saturate/compare/v0.1.0...v0.2.0
 [0.1.0]: https://example.invalid/wg-saturate/releases/tag/v0.1.0
