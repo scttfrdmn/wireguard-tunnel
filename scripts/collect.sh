@@ -72,28 +72,31 @@ max_busy=$(echo "$mp" | awk '/^Average:/ && $2 ~ /^[0-9]+$/ {b=100-$NF; if(b>m)m
 # This is the field that answers "which single thread is the bottleneck core running".
 top_threads="[]"
 # Per-thread-class %CPU rollup (in core-equivalents = %CPU/100), summed across all threads of
-# each class. Settles "is one stage dominating (serial) or is it distributed": compare
-# stage_decrypt vs stage_softirq vs stage_app. Classes by comm:
-#   napi/wg*         -> softirq (NAPI poll for the wg virtual device)
+# each class. Settles "is one stage dominating (serial) or is it distributed". NB: pidstat -t
+# thread rows prefix the command with "|__" (e.g. "|__napi/wg5-0"), so we strip that before
+# matching — otherwise the ^napi / ^ksoftirqd anchors silently never match. Classes by comm:
+#   napi/wg*         -> softirq   (NAPI poll for the wg virtual device)
 #   ksoftirqd*       -> ksoftirqd (generic softirq backlog)
-#   *wg-crypt*       -> decrypt (ChaCha20-Poly1305 kernel workqueue) -- the heavy stage
+#   *wg-crypt*       -> decrypt   (ChaCha20-Poly1305 kernel workqueue) -- the heavy stage
+#   *mm_percpu_wq*   -> memmgmt   (page alloc/free churn; surprisingly large at high N, run 5)
 #   iperf3           -> app (userspace reader)  ;  fio -> app_fio (nvme-tcp workload)
-stage_decrypt=0; stage_softirq=0; stage_ksoftirqd=0; stage_app=0; stage_app_fio=0
+stage_decrypt=0; stage_softirq=0; stage_ksoftirqd=0; stage_memmgmt=0; stage_app=0; stage_app_fio=0
 if [ -n "$pidlog" ] && [ -s "$pidlog" ]; then
   top_threads=$(awk '/^Average:/ && $3=="-" { pct=$(NF-2); comm=$NF; if (pct+0>5) print pct"\t"comm }' "$pidlog" \
     | sort -rn | head -8 \
     | awk -F'\t' 'BEGIN{printf "["} {gsub(/[\\"]/,"",$2); printf "%s{\"comm\":\"%s\",\"pct\":%.1f}", (NR>1?",":""), $2, $1} END{printf "]"}')
   [ -n "$top_threads" ] || top_threads="[]"
-  # sum %CPU/100 per class over ALL thread rows (not just top-8)
-  read -r stage_decrypt stage_softirq stage_ksoftirqd stage_app stage_app_fio < <(
+  # sum %CPU/100 per class over ALL thread rows (not just top-8). Strip the "|__" tree prefix.
+  read -r stage_decrypt stage_softirq stage_ksoftirqd stage_memmgmt stage_app stage_app_fio < <(
     awk '/^Average:/ && $3=="-" {
-      pct=$(NF-2); comm=$NF;
+      pct=$(NF-2); comm=$NF; sub(/^[|_]+/, "", comm);
       if (comm ~ /wg-crypt/)            dec+=pct;
       else if (comm ~ /^napi\/wg/)      sirq+=pct;
       else if (comm ~ /^ksoftirqd/)     ksd+=pct;
+      else if (comm ~ /mm_percpu_wq/)   mm+=pct;
       else if (comm ~ /iperf3/)         app+=pct;
       else if (comm ~ /^fio/)           fio+=pct;
-    } END { printf "%.2f %.2f %.2f %.2f %.2f\n", dec/100, sirq/100, ksd/100, app/100, fio/100 }' "$pidlog")
+    } END { printf "%.2f %.2f %.2f %.2f %.2f %.2f\n", dec/100, sirq/100, ksd/100, mm/100, app/100, fio/100 }' "$pidlog")
 fi
 [ -n "$pidlog" ] && rm -f "$pidlog"
 
@@ -139,6 +142,7 @@ cat > "$OUT" <<JSON
   "stage_decrypt_ce": ${stage_decrypt:-0},
   "stage_softirq_ce": ${stage_softirq:-0},
   "stage_ksoftirqd_ce": ${stage_ksoftirqd:-0},
+  "stage_memmgmt_ce": ${stage_memmgmt:-0},
   "stage_app_ce": ${stage_app:-0},
   "stage_app_fio_ce": ${stage_app_fio:-0},
   "softirq_rx_top_core_share": $top_share,

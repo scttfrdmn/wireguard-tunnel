@@ -91,7 +91,7 @@ func main() {
 		}
 	}
 	if anyStage {
-		fmt.Println("\n## Receiver stage cost (core-equivalents: dec=decrypt sirq=napi ksd=ksoftirqd app=iperf3)")
+		fmt.Println("\n## Receiver stage cost (core-equivalents: dec=decrypt sirq=napi ksd=ksoftirqd mm=mm_percpu_wq app=iperf3)")
 		fmt.Println("| mode | N | Gbps | receiver (node B) stage breakdown |")
 		fmt.Println("|------|---|------|-----------------------------------|")
 		for _, d := range dps {

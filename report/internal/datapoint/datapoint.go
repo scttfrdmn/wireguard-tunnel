@@ -37,6 +37,7 @@ type Node struct {
 	StageDecrypt   float64 `json:"stage_decrypt_ce"`   // wg-crypt kernel workqueue (ChaCha20)
 	StageSoftirq   float64 `json:"stage_softirq_ce"`   // napi/wg* NAPI poll
 	StageKsoftirqd float64 `json:"stage_ksoftirqd_ce"` // generic ksoftirqd backlog
+	StageMemmgmt   float64 `json:"stage_memmgmt_ce"`   // mm_percpu_wq page churn
 	StageApp       float64 `json:"stage_app_ce"`       // iperf3 userspace reader
 	StageAppFio    float64 `json:"stage_app_fio_ce"`   // fio (nvme-tcp workload)
 	BwIn           float64 `json:"bw_in_allowance_exceeded"`
@@ -51,16 +52,17 @@ type Node struct {
 
 // HasStageData reports whether the per-thread-class rollup was captured for this node.
 func (n Node) HasStageData() bool {
-	return n.StageDecrypt+n.StageSoftirq+n.StageKsoftirqd+n.StageApp+n.StageAppFio > 0
+	return n.StageDecrypt+n.StageSoftirq+n.StageKsoftirqd+n.StageMemmgmt+n.StageApp+n.StageAppFio > 0
 }
 
 // StageStr renders the stage-cost breakdown in core-equivalents, e.g.
-// "dec=18.2 sirq=6.1 ksd=3.0 app=12.5". Used to settle whether one stage dominates.
+// "dec=18.2 sirq=6.1 ksd=3.0 mm=4.0 app=12.5". Used to settle whether one stage dominates.
 func (n Node) StageStr() string {
 	if !n.HasStageData() {
 		return "-"
 	}
-	s := fmt.Sprintf("dec=%.1f sirq=%.1f ksd=%.1f app=%.1f", n.StageDecrypt, n.StageSoftirq, n.StageKsoftirqd, n.StageApp)
+	s := fmt.Sprintf("dec=%.1f sirq=%.1f ksd=%.1f mm=%.1f app=%.1f",
+		n.StageDecrypt, n.StageSoftirq, n.StageKsoftirqd, n.StageMemmgmt, n.StageApp)
 	if n.StageAppFio > 0 {
 		s += fmt.Sprintf(" fio=%.1f", n.StageAppFio)
 	}
