@@ -10,13 +10,24 @@ schema, report columns) may change between minor versions.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-20
+
+**Pushed past 100 to the real wall: 148.4 Gbps aggregate wire (bidirectional).** Beyond the
+103 Gbps unidirectional ceiling, a clean symmetric bidirectional node-split sweep peaks at
+**148.4 Gbps aggregate** (N=32), CPU-bound on both nodes, no allowance fired. Settles KICKOFF's
+"push to the ~180 wall": ENA meters in/out as independent ~180 Gbps allowances (no single
+aggregate cap), so the binding wall is aggregate ChaCha20 CPU across all 192 cores, not the
+network. Full progression: 60 → 77 → 89.5 → 95.3 → 103 (unidir) → 148 (bidir aggregate).
+
 ### Added
-- **Run 7 — pushed past 103 to ~136 Gbps aggregate wire (bidirectional).** Paired opposing
-  node-split flows: N=32 117.6 / N=48 **136.2** / N=64 112.5 Gbps aggregate (A→B + B→A). No AWS
-  allowance fired at any point (in/out metered separately, ~180 each — no single aggregate cap);
-  the wall is aggregate ChaCha20 CPU across 192 cores. Also established that **ENA per-packet
-  offloads are a dead end**: GSO/GRO already on, `tx-udp-segmentation` fixed-off, larger RX rings
-  don't help when CPU-bound.
+- **Run 8 (tidy) — 148.4 Gbps aggregate, clean per-direction datapoints.** Symmetric `BIDIR=1`
+  sweep N=32/40/48/64: aggregate 148.4 / 142.8 / 132.2 / 127.4 Gbps, balanced directions, both
+  nodes 99–100% CPU, no allowance. `stage_crypt` shows each node running two full crypto
+  pipelines (~39 core-equiv on the busy node) — confirms encrypt≈decrypt and the CPU wall.
+- **Run 7 — first bidirectional (~136 Gbps, ad-hoc) + offload dead-end.** Paired opposing
+  node-split flows. Established that **ENA per-packet offloads are a dead end**: GSO/GRO already
+  on, `tx-udp-segmentation` fixed-off, larger RX rings don't help when CPU-bound. Found+fixed
+  the BIDIR sshd-MaxSessions bug (reverse clients now in one SSH session).
 - **`nic-tune.sh`** (new): probe/on/off ENA offloads (`ethtool -K`) + ring depth (`-G`).
 - **`sweep.sh BIDIR=1`**: paired opposing A→B + B→A flows (not iperf3 `--bidir`), per-direction
   aggregation; reverse clients launched in a single SSH session (avoids sshd MaxSessions
@@ -227,7 +238,8 @@ First measured run. Harness completed, hardened on real hardware, and exercised 
 Initial import of the wg-saturate measurement harness (terraform + scripts + Go report),
 as received. Baseline for all subsequent changes.
 
-[Unreleased]: https://example.invalid/wg-saturate/compare/v0.3.0...HEAD
+[Unreleased]: https://example.invalid/wg-saturate/compare/v0.4.0...HEAD
+[0.4.0]: https://example.invalid/wg-saturate/compare/v0.3.0...v0.4.0
 [0.3.0]: https://example.invalid/wg-saturate/compare/v0.2.0...v0.3.0
 [0.2.0]: https://example.invalid/wg-saturate/compare/v0.1.0...v0.2.0
 [0.1.0]: https://example.invalid/wg-saturate/releases/tag/v0.1.0

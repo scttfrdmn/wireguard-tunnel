@@ -315,3 +315,19 @@ destroy complete, key deleted, billing stopped. ~50 min, <$8.
 ### bidir aggregate), wall attributed to aggregate ChaCha20 CPU (not the 180 network allowance).
 ### Remaining optional: symmetric BIDIR=1 re-sweep (now bug-fixed) for clean per-N datapoints;
 ### explicit cross-core pipelining.
+
+## 2026-06-20 — Session 10: tidy bidirectional re-sweep (run 8) — FINAL 148.4 Gbps, v0.4.0
+
+Clean symmetric BIDIR=1 sweep exercising the bug-fixed single-ssh reverse path:
+- N=32 **148.4** / N=40 142.8 / N=48 132.2 / N=64 127.4 Gbps aggregate. Balanced directions
+  (69.5 + 78.9 at peak) — earlier imbalance was the ssh artifact, confirmed gone.
+- Peak attribution: no allowance fired, both nodes 99-100% CPU (~70 core-equiv each), node A
+  stage_crypt 38.8 core-equiv (two full crypto pipelines). Wall = aggregate CPU, final.
+- All 4 datapoints full-attribution, committed. report 75 dp/23 modes.
+- Bumped VERSION 0.4.0, CHANGELOG [0.4.0] release; write-up headline + run-7 table updated to
+  the clean 148.4 numbers; memory updated. terraform destroy complete, key deleted, billing
+  stopped. ~30 min, <$5.
+
+### PROJECT COMPLETE. KICKOFF fully delivered: >=100 Gbps proven (103 unidir), pushed to the
+### wall (148 bidir aggregate), every knee attributed, wall = aggregate ChaCha20 CPU not the
+### 180 Gbps network allowance. Harness shellcheck/go clean; results + write-up + plots committed.

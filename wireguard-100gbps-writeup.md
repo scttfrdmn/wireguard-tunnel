@@ -6,14 +6,14 @@
 > deltas on **both** nodes.
 >
 > **A multi-tunnel WireGuard fabric carries ≥100 Gbps of encrypted throughput between two
-> `i8ge.48xlarge` nodes — and ~136 Gbps aggregate when both directions run.** Unidirectional,
+> `i8ge.48xlarge` nodes — and ~148 Gbps aggregate when both directions run.** Unidirectional,
 > node-split placement crossed 100 Gbps at **N=40 → 103.2 Gbps** (113 on a warmer instance) and
-> held through N=64. **Bidirectional** (paired opposing flows) reached **~136 Gbps aggregate
-> wire** (peak at N=48). In every case **no AWS allowance fired** — the binding wall is
-> aggregate ChaCha20 CPU across all 192 cores, never the network (raw ENA hit 208 Gbps with no
-> WG; ENA meters in/out *separately* at ~180 each, so there is no single aggregate cap to hit).
-> The decisive unlock was **NUMA-aware placement**: spread the work across both memory
-> controllers, don't hoard the NIC-local node.
+> held through N=64. **Bidirectional** (paired opposing flows, symmetric tuning) peaked at
+> **148.4 Gbps aggregate wire** (N=32: 69.5 A→B + 78.9 B→A), tapering to 127 by N=64. In every
+> case **no AWS allowance fired** — the binding wall is aggregate ChaCha20 CPU across all 192
+> cores, never the network (raw ENA hit 208 Gbps with no WG; ENA meters in/out *separately* at
+> ~180 each, so there is no single aggregate cap to hit). The decisive unlock was **NUMA-aware
+> placement**: spread the work across both memory controllers, don't hoard the NIC-local node.
 >
 > **Per-packet offloads are a dead end on ENA:** GSO/GRO are already on; hardware UDP
 > segmentation (`tx-udp-segmentation`) is `[fixed]` off and un-toggleable, and enlarging RX
@@ -374,21 +374,24 @@ So per-byte cost is not reducible here; placement remains the only lever.
 A→B *and* N tunnels B→A, on disjoint port blocks — *not* iperf3 `--bidir`, which would muddy
 per-direction attribution and force both directions through one peer's serial crypto pipeline):
 
-| N | A→B Gbps | B→A Gbps | aggregate wire |
-|---|----------|----------|----------------|
-| 32 | 52.6 | 65.0 | 117.6 |
-| 48 | 46.7 | 89.5 | **136.2** |
-| 64 | 40.2 | 72.3 | 112.5 (oversubscribed: 128 flows) |
+| N | A→B Gbps | B→A Gbps | aggregate wire | both nodes max-util |
+|---|----------|----------|----------------|---------------------|
+| **32** | 69.5 | 78.9 | **148.4** | 99% / 100% |
+| 40 | 64.8 | 78.1 | 142.8 | 100% / 100% |
+| 48 | 60.5 | 71.7 | 132.2 | 99% / 99% |
+| 64 | 60.2 | 67.3 | 127.4 (oversubscribed: 128 flows) | 98% / 98% |
 
-**Peak ~136 Gbps aggregate wire**, well past the 103 unidirectional. Attribution at the peak:
-**no allowance fired** (`bw_in`/`bw_out`/`pps` all 0 on both nodes), node A CPU-saturated (100%,
-81 core-equiv), node B ~88%. So even full-duplex, the wall is **aggregate ChaCha20 CPU across
-192 cores, never the network.** This settles the "180 Gbps wall" question: ENA meters ingress
-and egress as *independent* ~180 Gbps allowances (confirmed — neither `bw_in` nor `bw_out` ever
-fired at 136 aggregate), so there is **no single 180 aggregate cap**; the honest result is
-"per-direction allowance never binds; CPU does." The direction imbalance (B→A > A→B) reflects an
-asymmetry in how the ad-hoc reverse flows were driven (one node ran the reverse iperf3 clients
-via SSH), not a fundamental effect; a symmetric `BIDIR=1` sweep would even it out.
+**Peak 148.4 Gbps aggregate wire** (clean symmetric `BIDIR=1` sweep), well past the 103
+unidirectional. Attribution at the peak: **no allowance fired** (`bw_in`/`bw_out`/`pps` all 0 on
+both nodes), and **both nodes CPU-saturated** (99–100%, ~68–71 core-equivalents each). The
+`stage_crypt` breakdown confirms the mechanism: node A spends ~39 core-equiv in `wg-crypt`
+(encrypting A→B *and* decrypting B→A simultaneously) — each node carries **two full crypto
+pipelines**. So even full-duplex, the wall is **aggregate ChaCha20 CPU across 192 cores, never
+the network.** This settles the "180 Gbps wall" question: ENA meters ingress and egress as
+*independent* ~180 Gbps allowances (confirmed — neither `bw_in` nor `bw_out` ever fired at 148
+aggregate), so there is **no single 180 aggregate cap**; the honest result is "per-direction
+allowance never binds; CPU does." Throughput peaks at N=32 and tapers with N (full-duplex
+oversubscription: 64 tunnels × 2 directions = 128 flows contending for the same cores).
 
 ### Still open: explicit cross-core stage pipelining
 
@@ -420,8 +423,12 @@ within one node would *not* address. Untested; lower priority than it was pre-ru
   settled that the 90% remote-BW figure is interconnect saturation (not per-access: 2.2×
   latency), and confirmed RPS neutral + wg-crypt WQ per-CPU.
 - **Run 7** (push past 103, 2026-06-20): offload A/B (ENA UDP-GSO fixed-off, rings don't help)
-  + **bidirectional node-split → ~136 Gbps aggregate wire** (peak N=48), no allowance fired,
-  CPU-bound. Settled that there's no single 180 aggregate cap (in/out metered separately).
+  + first bidirectional node-split (~136 Gbps aggregate, ad-hoc reverse drive). Settled that
+  there's no single 180 aggregate cap (in/out metered separately). Found+fixed the BIDIR
+  sshd-MaxSessions bug.
+- **Run 8** (tidy bidirectional, 2026-06-20): clean symmetric `BIDIR=1` sweep →
+  **148.4 Gbps aggregate wire peak (N=32)**, balanced directions (69.5 + 78.9), both nodes
+  CPU-saturated, no allowance fired. Full per-direction attribution captured. **Final result.**
 - **Run 6** (push to 100, 2026-06-20): N_MAX=64 node-split sweep. **Crossed 100 Gbps at
   N=40 → 103.2 Gbps**, holding ~100–103 to N=64, no allowance fired — **goal met**. Also
   fixed the `collect.sh` stage rollup (was missing the `|__` pidstat prefix); attribution
