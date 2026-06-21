@@ -129,6 +129,33 @@ func main() {
 		}
 	}
 
+	// unidirectional limit analysis: where does the receiver CPU go, and is the work
+	// distributed (per-flow rate ∝ 1/N) rather than queue/RSS-imbalanced? Only printed when the
+	// new instrumentation is present (core_equiv_softsys captured).
+	anyLimit := false
+	for _, d := range dps {
+		if d.NodeB.CoreEquivSofts > 0 || d.NodeB.RxqBytesCV > 0 {
+			anyLimit = true
+			break
+		}
+	}
+	if anyLimit {
+		fmt.Println("\n## Unidirectional limit analysis (receiver = node B)")
+		fmt.Println("| mode | N | Gbps | rx_gbps | coreEq | kernel(soft+sys) | usr | per-flow Gbps cv | rxq cv | binding |")
+		fmt.Println("|------|---|------|---------|--------|------------------|-----|------------------|--------|---------|")
+		for _, d := range dps {
+			b := d.NodeB
+			if b.CoreEquivSofts == 0 && b.RxqBytesCV == 0 {
+				continue
+			}
+			fmt.Printf("| %s | %d | %.1f | %.1f | %.1f | %.1f | %.1f | %.3f | %.2f | %s |\n",
+				d.Mode, d.N, d.Gbps, b.RxGbps, b.BusyCoreEquiv, b.CoreEquivSofts, b.CoreEquivUsr,
+				d.FlowCV, b.RxqBytesCV, dp.Classify(d))
+		}
+		fmt.Println("\n_kernel(soft+sys) ≫ named stages ⇒ the cost is un-offloadable per-packet stack work;" +
+			" low rxq cv ⇒ RSS even (not a hot-queue problem); per-flow cv stable while Gbps flat ⇒ aggregate-CPU-limited._")
+	}
+
 	// per-mode summary: peak Gbps and first hard-allowance knee
 	fmt.Println("\n## Per-mode summary")
 	for _, mode := range dp.Modes(dps) {

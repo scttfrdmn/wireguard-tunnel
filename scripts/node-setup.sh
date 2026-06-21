@@ -12,7 +12,7 @@ apt-get update -qq
 # (ENA Express is toggled from the operator host via enable-ena-express.sh).
 apt-get install -y -qq wireguard-tools iperf3 fio ethtool sysstat jq \
   linux-tools-common "linux-tools-$(uname -r)" build-essential nvme-cli \
-  numactl irqbalance >/dev/null
+  numactl irqbalance socat >/dev/null
 
 # nvme-tcp (initiator) and nvmet-tcp (target) live in linux-modules-extra on the AWS kernel,
 # not the base image — needed for the NVMe->NVMe over nvme-tcp test (measure-nvme-tcp.sh).

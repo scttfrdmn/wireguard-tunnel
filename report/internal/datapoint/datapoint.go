@@ -23,15 +23,19 @@ type Node struct {
 	MaxCoreUtil     float64 `json:"max_core_util"`
 	SoftirqTopShare float64 `json:"softirq_rx_top_core_share"`
 	// Per-core CPU histogram (added v0.3 instrumentation; zero/absent on older datapoints).
-	NCores        float64  `json:"ncores"`
-	BusyCoreEquiv float64  `json:"busy_core_equiv"` // sum((100-idle)/100): how many full cores' worth of work
-	CoresGt50     float64  `json:"cores_gt50"`
-	CoresGt90     float64  `json:"cores_gt90"`
-	BandY0_10     float64  `json:"util_band_0_10"`
-	BandY10_50    float64  `json:"util_band_10_50"`
-	BandY50_90    float64  `json:"util_band_50_90"`
-	BandY90_100   float64  `json:"util_band_90_100"`
-	TopThreads    []Thread `json:"top_threads"`
+	NCores         float64  `json:"ncores"`
+	BusyCoreEquiv  float64  `json:"busy_core_equiv"`    // sum((100-idle)/100): how many full cores' worth of work
+	CoreEquivSofts float64  `json:"core_equiv_softsys"` // sum(%sys+%irq+%soft)/100: kernel/stack cost (un-threaded)
+	CoreEquivUsr   float64  `json:"core_equiv_usr"`     // sum(%usr)/100: userspace cost
+	RxGbps         float64  `json:"rx_gbps"`            // wire receive Gbps from per-queue rx_bytes delta
+	RxqBytesCV     float64  `json:"rxq_bytes_cv"`       // per-RX-queue byte-delta CV (RSS balance; low=even)
+	CoresGt50      float64  `json:"cores_gt50"`
+	CoresGt90      float64  `json:"cores_gt90"`
+	BandY0_10      float64  `json:"util_band_0_10"`
+	BandY10_50     float64  `json:"util_band_10_50"`
+	BandY50_90     float64  `json:"util_band_50_90"`
+	BandY90_100    float64  `json:"util_band_90_100"`
+	TopThreads     []Thread `json:"top_threads"`
 	// Per-thread-class CPU rollup in core-equivalents (added v0.4; settles "one stage dominates"
 	// vs "distributed"). Zero/absent on older datapoints.
 	StageDecrypt   float64 `json:"stage_decrypt_ce"`   // wg-crypt kernel workqueue (ChaCha20)
@@ -96,6 +100,8 @@ type Datapoint struct {
 	Gbps    float64 `json:"throughput_gbps"` // aggregate wire (a2b+b2a under BIDIR; else just a2b)
 	GbpsA2B float64 `json:"throughput_gbps_a2b"`
 	GbpsB2A float64 `json:"throughput_gbps_b2a"` // >0 only for bidirectional datapoints
+	Sink    string  `json:"sink"`                // "iperf3" (default) or "devnull"
+	FlowCV  float64 `json:"flow_gbps_cv"`        // per-flow rate coefficient of variation
 	NvmeGBs float64 `json:"nvme_GBps"`           // set only by measure-nvme-tcp.sh; 0 for the iperf sweep
 	RW      string  `json:"rw"`                  // "read"/"write" for nvme-tcp datapoints, else ""
 	NodeA   Node    `json:"node_a"`

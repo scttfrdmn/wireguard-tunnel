@@ -40,6 +40,8 @@ for k in bw_in_allowance_exceeded bw_out_allowance_exceeded \
 done
 srd_util=$(ena_stat ena_srd_resource_utilization)
 softirq_before=$(awk '/NET_RX/{for(i=2;i<=NF;i++)printf "%s ",$i; print ""}' /proc/softirqs)
+# per-RX-queue byte counters (sorted by queue index) — for the RSS-balance check
+rxq_before=$(ena_stats | awk '$1 ~ /^queue_[0-9]+_rx_bytes$/{gsub(/[^0-9]/,"",$1); print $1+0" "$2}' | sort -n | awk '{print $2}' | tr '\n' ' ')
 t0=$(date +%s.%N)
 
 # --- CPU over the window: per-core histogram + thread attribution ---
@@ -67,6 +69,15 @@ $(echo "$mp" | awk '/^Average:/ && $2 ~ /^[0-9]+$/ {
 EOF
 busy_cores=$cores_gt90   # preserve the original field's meaning (# cores >90% busy)
 max_busy=$(echo "$mp" | awk '/^Average:/ && $2 ~ /^[0-9]+$/ {b=100-$NF; if(b>m)m=b} END{printf "%.1f", m+0}')
+
+# Per-CPU-CLASS core-equivalents: split the busy time into kernel (sys+irq+soft) vs userspace.
+# mpstat -P ALL columns: CPU %usr %nice %sys %iowait %irq %soft %steal %guest %gnice %idle
+# (%usr=$3 %sys=$5 %irq=$7 %soft=$8). This is THE measurement that explains the "missing"
+# core-equiv: the per-thread rollup can't name softirq/stack time, but it lands in %soft/%sys.
+# If core_equiv_softsys ~= busy_core_equiv - (sum of named stages), the wall is irreducible
+# per-packet kernel receive cost (GRO/TCP/copy/NET_RX), not a steerable thread.
+read -r core_equiv_softsys core_equiv_usr < <(
+  echo "$mp" | awk '/^Average:/ && $2 ~ /^[0-9]+$/ { ss+=$5+$7+$8; us+=$3 } END{ printf "%.2f %.2f\n", ss/100, us/100 }')
 
 # Top threads by %CPU during the window (thread rows in pidstat -t have TGID column "-").
 # This is the field that answers "which single thread is the bottleneck core running".
@@ -112,8 +123,9 @@ for k in "${!B[@]}"; do
   A[$k]=$(ena_stat "$k")
 done
 softirq_after=$(awk '/NET_RX/{for(i=2;i<=NF;i++)printf "%s ",$i; print ""}' /proc/softirqs)
+rxq_after=$(ena_stats | awk '$1 ~ /^queue_[0-9]+_rx_bytes$/{gsub(/[^0-9]/,"",$1); print $1+0" "$2}' | sort -n | awk '{print $2}' | tr '\n' ' ')
 
-# softirq concentration: top core's share of total NET_RX delta.
+# softirq concentration: top core's share of total NET_RX delta, and how many cores were active.
 # NB: command substitution (not `read`) — awk's printf emits no trailing newline, so a
 # `read` here returns non-zero at EOF and aborts the script under `set -e`.
 top_share=$(paste -d' ' <(echo "$softirq_before") <(echo "$softirq_after") | awk '{
@@ -121,19 +133,38 @@ top_share=$(paste -d' ' <(echo "$softirq_before") <(echo "$softirq_after") | awk
   for(i=1;i<=half;i++){d=$(i+half)-$i; if(d<0)d=0; tot+=d; if(d>top)top=d}
   if(tot>0) printf "%.3f", top/tot; else printf "0"
 }')
+softirq_active_queues=$(paste -d' ' <(echo "$softirq_before") <(echo "$softirq_after") | awk '{
+  half=NF/2; tot=0; for(i=1;i<=half;i++){d=$(i+half)-$i; if(d>0)tot+=d}
+  c=0; for(i=1;i<=half;i++){d=$(i+half)-$i; if(d>0.01*tot)c++}; printf "%d", c}')
+
+# per-RX-queue byte-delta distribution: coefficient of variation + max/mean across queues.
+# Low cv => RSS spreads flows evenly (rules RSS imbalance out); high cv => hot queues.
+read -r rxq_n rxq_cv rxq_max_over_mean < <(paste -d' ' <(echo "$rxq_before") <(echo "$rxq_after") | awk '{
+  half=NF/2; n=0; sum=0; mx=0;
+  for(i=1;i<=half;i++){ d=$(i+half)-$i; if(d<0)d=0; v[++n]=d; sum+=d; if(d>mx)mx=d }
+  if(n==0||sum==0){ print "0 0 0"; exit }
+  mean=sum/n; ss=0; for(j=1;j<=n;j++){ ss+=(v[j]-mean)*(v[j]-mean) }
+  printf "%d %.3f %.2f\n", n, sqrt(ss/n)/mean, mx/mean }')
 
 d() { echo $(( A[$1] - B[$1] )); }
 tx_pps=$(echo "($(d tx_packets))/$dt" | bc -l)
+# wire-level receive Gbps from the per-queue rx_bytes delta sum (independent of iperf3 —
+# this is the throughput reading for the SINK=devnull sweep, and a cross-check otherwise).
+rx_gbps=$(paste -d' ' <(echo "$rxq_before") <(echo "$rxq_after") | awk -v dt="$dt" '{
+  half=NF/2; s=0; for(i=1;i<=half;i++){ x=$(i+half)-$i; if(x>0)s+=x } printf "%.3f", (s*8)/1e9/dt }')
 
 cat > "$OUT" <<JSON
 {
   "host": "$(hostname -s)",
   "duration_s": $DUR,
   "tx_pps": $(printf '%.0f' "$tx_pps"),
+  "rx_gbps": ${rx_gbps:-0},
   "busy_cores": $busy_cores,
   "max_core_util": $max_busy,
   "ncores": ${ncores:-0},
   "busy_core_equiv": ${busy_core_equiv:-0},
+  "core_equiv_softsys": ${core_equiv_softsys:-0},
+  "core_equiv_usr": ${core_equiv_usr:-0},
   "cores_gt50": ${cores_gt50:-0},
   "cores_gt90": ${cores_gt90:-0},
   "util_band_0_10": ${band_0_10:-0},
@@ -149,6 +180,10 @@ cat > "$OUT" <<JSON
   "stage_app_ce": ${stage_app:-0},
   "stage_app_fio_ce": ${stage_app_fio:-0},
   "softirq_rx_top_core_share": $top_share,
+  "softirq_active_queues": ${softirq_active_queues:-0},
+  "rxq_count": ${rxq_n:-0},
+  "rxq_bytes_cv": ${rxq_cv:-0},
+  "rxq_max_over_mean": ${rxq_max_over_mean:-0},
   "bw_in_allowance_exceeded": $(d bw_in_allowance_exceeded),
   "bw_out_allowance_exceeded": $(d bw_out_allowance_exceeded),
   "pps_allowance_exceeded": $(d pps_allowance_exceeded),

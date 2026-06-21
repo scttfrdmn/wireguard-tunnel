@@ -31,6 +31,13 @@ SDIR="$(cd "$(dirname "$0")" && pwd)"
 BIDIR="${BIDIR:-}"
 REV_BASE="${REV_BASE:-$((IPERF_BASE_PORT + 1000))}"   # reverse-flow iperf ports (B->A)
 
+# SINK=devnull — replace the iperf3 server/client pair with a raw socat blaster→/dev/null sink,
+# to measure throughput WITHOUT iperf3's per-interval userspace accounting cost. Sender:
+# `socat -u /dev/zero TCP:dst:port` per tunnel; receiver runs the matching sinks (server-up.sh
+# SINK=devnull). Throughput is read from the receiver's ENA rx_bytes delta (in node_b.json),
+# not iperf3 JSON. Isolates "is iperf3 itself part of the 113 ceiling?". Forward/A->B only.
+SINK="${SINK:-iperf3}"
+
 # Guard: the recorded wg_mtu must match the live tunnel, or the datapoint is mislabeled.
 live_mtu=$(cat "/sys/class/net/$(tun_dev 0)/mtu" 2>/dev/null || echo "")
 if [ -n "$live_mtu" ] && [ "$live_mtu" != "$WG_MTU" ]; then
@@ -45,10 +52,15 @@ for N in $SWEEP; do
   # orphaned flow*.json files that would inflate the aggregate.
   rm -f "$outdir"/flow*.json "$outdir"/wgrev_*.json "$outdir/node_a.json" "$outdir/node_b.json"
 
-  # forward A->B: one client per tunnel on A
+  # forward A->B: one client per tunnel on A. iperf3 (default) writes per-flow JSON; the
+  # devnull sink uses socat /dev/zero->TCP for `DUR` seconds (timeout-bounded), no JSON.
   pids=(); for i in $(seq 0 $((N-1))); do
     src=$(tun_ip "$i" 1); dst=$(tun_ip "$i" 2); port=$((IPERF_BASE_PORT + i))
-    iperf3 -c "$dst" -B "$src" -p "$port" -t "$DUR" -P 1 -J > "$outdir/flow$i.json" 2>/dev/null &
+    if [ "$SINK" = devnull ]; then
+      timeout "$((DUR+2))" socat -u OPEN:/dev/zero "TCP:${dst}:${port},bind=${src}" >/dev/null 2>&1 &
+    else
+      iperf3 -c "$dst" -B "$src" -p "$port" -t "$DUR" -P 1 -J > "$outdir/flow$i.json" 2>/dev/null &
+    fi
     pids+=($!)
   done
 
@@ -80,22 +92,39 @@ for N in $SWEEP; do
     scp -o StrictHostKeyChecking=no -q "ubuntu@${REMOTE_HOST}:/tmp/wgrev_*.json" "$outdir/" 2>/dev/null || true
   fi
 
-  # per-direction aggregate throughput
-  gbps_a2b=$(jq -s '[.[].end.sum_sent.bits_per_second]|add/1e9' "$outdir"/flow*.json)
+  # per-direction A->B throughput.
+  #   devnull sink: no iperf3 JSON — use the receiver's wire rx_gbps (from node_b.json).
+  #   iperf3:       sum the per-flow sum_sent + compute the per-flow rate distribution.
+  flow_min=0; flow_med=0; flow_max=0; flow_cv=0
+  if [ "$SINK" = devnull ]; then
+    gbps_a2b=$(jq -r '.rx_gbps // 0' "$outdir/node_b.json" 2>/dev/null || echo 0)
+  else
+    gbps_a2b=$(jq -s '[.[].end.sum_sent.bits_per_second]|add/1e9' "$outdir"/flow*.json)
+    # per-flow rate distribution (receiver-true sum_received) — proves diminishing returns:
+    # as N rises, mean per-flow rate falling ~1/N while the sum stays flat = aggregate-limited.
+    read -r flow_min flow_med flow_max flow_cv < <(jq -s '
+      [.[].end.sum_received.bits_per_second/1e9] | sort as $s |
+      ($s|add/length) as $m |
+      "\($s[0]) \($s[(length/2|floor)]) \($s[-1]) \(if $m>0 then (([.[]|(.-$m)*(.-$m)]|add/length)|sqrt)/$m else 0 end)"
+    ' "$outdir"/flow*.json 2>/dev/null | tr -d '"' || echo "0 0 0 0")
+  fi
   if [ -n "$BIDIR" ] && ls "$outdir"/wgrev_*.json >/dev/null 2>&1; then
     gbps_b2a=$(jq -s '[.[].end.sum_sent.bits_per_second]|add/1e9' "$outdir"/wgrev_*.json 2>/dev/null || echo 0)
   else
     gbps_b2a=0
   fi
-  gbps=$(jq -n --argjson f "$gbps_a2b" --argjson r "$gbps_b2a" '$f + $r')   # aggregate wire
+  gbps=$(jq -n --argjson f "${gbps_a2b:-0}" --argjson r "${gbps_b2a:-0}" '$f + $r')   # aggregate wire
 
   jq -n \
     --argjson n "$N" --arg mode "$MODE" --argjson mtu "$WG_MTU" --argjson dur "$DUR" \
-    --argjson gbps "$gbps" --argjson a2b "$gbps_a2b" --argjson b2a "$gbps_b2a" \
+    --arg sink "$SINK" \
+    --argjson gbps "$gbps" --argjson a2b "${gbps_a2b:-0}" --argjson b2a "${gbps_b2a:-0}" \
+    --argjson fmin "${flow_min:-0}" --argjson fmed "${flow_med:-0}" --argjson fmax "${flow_max:-0}" --argjson fcv "${flow_cv:-0}" \
     --slurpfile a "$outdir/node_a.json" \
     --slurpfile b "$outdir/node_b.json" \
-    '{n_tunnels:$n, mode:$mode, wg_mtu:$mtu, duration_s:$dur, throughput_gbps:$gbps,
+    '{n_tunnels:$n, mode:$mode, sink:$sink, wg_mtu:$mtu, duration_s:$dur, throughput_gbps:$gbps,
       throughput_gbps_a2b:$a2b, throughput_gbps_b2a:$b2a,
+      flow_gbps_min:$fmin, flow_gbps_median:$fmed, flow_gbps_max:$fmax, flow_gbps_cv:$fcv,
       node_a:$a[0], node_b:$b[0]}' > "$outdir/datapoint.json"
 
   if [ -n "$BIDIR" ]; then
