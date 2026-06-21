@@ -101,7 +101,7 @@ bash -n clean on all 16 scripts. Docs (README/CHANGELOG/CLAUDE) updated.
 
 Dedicated key `wg-saturate` (generated + imported; scofri private key wasn't local).
 2× i8ge.48xlarge Spot in us-west-2d (usw2-az4), ~$2.28/instance-hr. Preflight (read-only,
-free): confirmed offering, AZ, 640 vCPU Spot quota. Operator IP 104.226.178.37/32.
+free): confirmed offering, AZ, 640 vCPU Spot quota. Operator IP <operator-ip>.
 
 **Six real-hardware bugs found & fixed (all folded back into the repo + CHANGELOG):**
 1. `collect.sh` `read`-without-newline aborted under `set -e` → all node JSON empty, sweep
@@ -141,7 +141,7 @@ Built CPU instrumentation first (offline, committed): collect.sh per-core histog
 busy_core_equiv + pidstat top_threads; report core-equiv/Gbps-per-core + Hot threads table;
 pin-workers.sh affinity knob. Then ran it live.
 
-Run 2 (key re-imported, operator IP updated to 137.99.223.75, all 6 prior fixes held — clean
+Run 2 (key re-imported, operator IP updated to <operator-ip>, all 6 prior fixes held — clean
 setup on first try; nvme-tcp modules + pidstat present):
 - placement: 7.9/15.7/29.1/48.0/56.0/55.3/55.8/59.9 (N=1..32) — same ~60 plateau.
 - **Instrumentation ANSWERS the open question:** receiver at N=32 = ~57 core-equivalents
@@ -192,7 +192,7 @@ billing stopped. ~25 min, <$5.
 Built offline first: measure-membw-numa.sh (per-node STREAM), node-setup NIC-local IRQ pinning,
 detect-nvme --node, detect-numa PCIe probe, nvme-target-up NVME_NODE/NVME_MAX, PIPELINING-DESIGN.md.
 
-Live run 4 (us-west-2d Spot, IP updated to 69.64.211.26):
+Live run 4 (us-west-2d Spot, IP updated to <operator-ip>):
 - **IRQ fix verified**: ENA IRQs now on cores 96-191 (node 1, NIC-local) — confirmed via
   /proc/irq smp_affinity_list.
 - **membw-numa** (after fixing 2 bugs live — arm64 BSS reloc overflow + const-folding →
@@ -241,7 +241,7 @@ stubbed on mac). NO SPEND. Plan file: ~/.claude/plans/cuddly-sprouting-liskov.md
 
 ## 2026-06-20 — Session 7: live placement run (run 5) — NODE-SPLIT WINS at 95.3 Gbps
 
-Authorized spend. us-west-2d Spot $2.37/inst-hr, IP->47.150.84.16. Ran the placement toolkit
+Authorized spend. us-west-2d Spot $2.37/inst-hr, IP-><operator-ip>. Ran the placement toolkit
 built in session 6.
 
 Phase-0 free probes: RPS off, 32 rxq, rx buffers node 1; wg-crypt WQ is PER-CPU (kworkers
