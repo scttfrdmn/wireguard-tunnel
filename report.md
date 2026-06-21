@@ -39,6 +39,7 @@
 | align | 16 | 68.5 | - | 18.3/42.1 | 1.63 | 21/100 | 0 | CPU / crypto |
 | align | 24 | 75.8 | - | 19.9/53.9 | 1.41 | 23/100 | 0 | CPU / crypto |
 | align | 32 | 79.3 | - | 20.9/61.4 | 1.29 | 19/100 | 0 | CPU / crypto |
+| bidir_split | 32 | 117.6 | - | 51.6/58.9 | 2.00 | 95/100 | 0 | CPU / crypto |
 | ena_express | 1 | 7.9 | - | 1.9/3.5 | 2.23 | 10/44 | 15 | single RX queue (need more tunnels) |
 | ena_express | 2 | 15.7 | - | 3.7/7.0 | 2.25 | 23/78 | 42 | linear region (unbound) |
 | ena_express | 4 | 27.8 | - | 7.2/13.3 | 2.10 | 26/84 | 39 | linear region (unbound) |
@@ -105,6 +106,13 @@
 | split64 | 40 | 103.2 | - | 26.5/70.3 | 1.47 | 24/100 | 0 | CPU / crypto |
 | split64 | 48 | 100.3 | - | 25.3/0.0 | 3.97 | 21/0 | 0 | linear region (unbound) |
 | split64 | 64 | 103.1 | - | 26.0/89.5 | 1.15 | 21/100 | 0 | CPU / crypto |
+| uni_rings1024 | 40 | 113.0 | - | 29.0/70.9 | 1.59 | 47/99 | 0 | CPU / crypto |
+| uni_ringsmax | 40 | 103.0 | - | 26.2/81.6 | 1.26 | 22/100 | 0 | CPU / crypto |
+
+## Bidirectional (aggregate wire = A→B + B→A)
+| mode | N | aggregate Gbps | A→B | B→A | core-equiv (A/B) | max util (A/B) | allowance fired? |
+|------|---|----------------|-----|-----|------------------|----------------|------------------|
+| bidir_split | 32 | **117.6** | 52.6 | 65.0 | 51.6/58.9 | 95/100 | no (CPU-bound) |
 
 ## Hot threads during load (top by %CPU)
 | mode | N | node A (sender/encrypt) | node B (receiver/decrypt) |
@@ -112,6 +120,7 @@
 | align | 16 | |__napi/wg1-0:26 |__napi/wg8-0:24 |__napi/wg0-0:24 |__napi/wg13-0:24 | |__iperf3:41 |__iperf3:41 |__iperf3:40 |__iperf3:40 |
 | align | 24 | |__napi/wg20-0:20 |__napi/wg7-0:19 |__napi/wg0-0:19 |__napi/wg14-0:19 | |__kworker/174:0-mm_percpu_wq:11 |__kworker/156:0-events:11 |__kworker/163:0-mm_percpu_wq:11 |__kworker/153:0-wg-crypt-wg17:11 |
 | align | 32 | |__napi/wg29-0:17 |__napi/wg14-0:17 |__napi/wg9-0:16 |__napi/wg7-0:16 | |__iperf3:43 |__iperf3:41 |__iperf3:40 |__iperf3:40 |
+| bidir_split | 32 | |__iperf3:36 |__iperf3:32 |__iperf3:30 |__napi/wg29-0:28 | |__napi/wg28-0:31 |__napi/wg8-0:30 |__napi/wg6-0:29 |__napi/wg4-0:28 |
 | ena_express | 1 | |__iperf3:21 |__napi/wg0-0:16 |__pidstat:10 |__kworker/1:1-wg-crypt-wg0:6 | |__iperf3:38 |__napi/wg0-0:38 |__pidstat:11 |__kworker/1:3-wg-crypt-wg0:8 |
 | ena_express | 2 | |__napi/wg1-0:23 |__napi/wg0-0:15 |__iperf3:15 |__iperf3:15 | |__iperf3:36 |__iperf3:36 |__napi/wg0-0:33 |__napi/wg1-0:32 |
 | ena_express | 4 | |__napi/wg1-0:24 |__napi/wg3-0:23 |__napi/wg2-0:22 |__napi/wg0-0:22 | |__iperf3:36 |__iperf3:36 |__napi/wg0-0:34 |__napi/wg2-0:33 |
@@ -172,6 +181,8 @@
 | split64 | 40 | |__napi/wg9-0:24 |__napi/wg28-0:23 |__napi/wg22-0:22 |__napi/wg20-0:21 | |__iperf3:21 |__napi/wg32-0:14 |__ksoftirqd/109:13 |__ksoftirqd/96:13 |
 | split64 | 48 | |__napi/wg28-0:19 |__napi/wg30-0:17 |__napi/wg20-0:17 |__napi/wg22-0:16 | - |
 | split64 | 64 | |__pidstat:12 |__napi/wg59-0:11 |__napi/wg57-0:11 |__napi/wg62-0:11 | |__iperf3:23 |__napi/wg32-0:15 |__ksoftirqd/109:12 |__ksoftirqd/104:12 |
+| uni_rings1024 | 40 | |__napi/wg29-0:20 |__napi/wg31-0:20 |__napi/wg28-0:20 |__napi/wg24-0:19 | |__iperf3:39 |__napi/wg32-0:10 |__kworker/11:1-wg-crypt-wg10:8 |__pidstat:7 |
+| uni_ringsmax | 40 | |__napi/wg33-0:20 |__napi/wg31-0:18 |__napi/wg29-0:18 |__napi/wg34-0:18 | |__iperf3:36 |__ksoftirqd/111:11 |__kworker/8:1-wg-crypt-wg32:11 |__kworker/15:3-wg-crypt-wg32:10 |
 
 ## Receiver stage cost (core-equivalents: dec=decrypt sirq=napi ksd=ksoftirqd mm=mm_percpu_wq app=iperf3)
 | mode | N | Gbps | receiver (node B) stage breakdown |
@@ -179,6 +190,7 @@
 | align | 16 | 68.5 | dec=32.1 sirq=0.0 ksd=0.0 mm=0.0 app=5.5 |
 | align | 24 | 75.8 | dec=17.3 sirq=0.0 ksd=0.0 mm=0.0 app=0.0 |
 | align | 32 | 79.3 | dec=46.5 sirq=0.0 ksd=0.0 mm=0.0 app=10.0 |
+| bidir_split | 32 | 117.6 | dec=23.9 sirq=5.6 ksd=1.1 mm=5.9 app=0.0 |
 | irqlocal_userN1 | 16 | 75.1 | dec=30.8 sirq=0.0 ksd=0.0 mm=0.0 app=5.5 |
 | irqlocal_userN1 | 24 | 77.1 | dec=16.9 sirq=0.0 ksd=0.0 mm=0.0 app=0.0 |
 | irqlocal_userN1 | 32 | 79.6 | dec=31.2 sirq=0.0 ksd=0.0 mm=0.0 app=0.0 |
@@ -190,9 +202,12 @@
 | split64 | 32 | 99.3 | dec=16.7 sirq=1.4 ksd=1.4 mm=3.8 app=0.0 |
 | split64 | 40 | 103.2 | dec=22.1 sirq=1.6 ksd=1.4 mm=1.2 app=0.2 |
 | split64 | 64 | 103.1 | dec=21.4 sirq=1.9 ksd=1.4 mm=1.6 app=0.2 |
+| uni_rings1024 | 40 | 113.0 | dec=12.2 sirq=0.9 ksd=0.8 mm=3.3 app=0.4 |
+| uni_ringsmax | 40 | 103.0 | dec=23.8 sirq=1.5 ksd=1.1 mm=6.5 app=0.4 |
 
 ## Per-mode summary
 - **align:** peak 79.3 Gbps; first knee at N=16 (CPU / crypto)
+- **bidir_split:** peak 117.6 Gbps; first knee at N=32 (CPU / crypto)
 - **ena_express:** peak 58.7 Gbps; first knee at N=1 (single RX queue (need more tunnels))
 - **irqlocal_unpinned:** peak 67.6 Gbps; first knee at N=8 (CPU / crypto)
 - **irqlocal_userN0:** peak 56.3 Gbps; first knee at N=16 (CPU / crypto)
@@ -212,3 +227,5 @@
 - **rps_on:** peak 79.0 Gbps; first knee at N=16 (CPU / crypto)
 - **split:** peak 95.3 Gbps; first knee at N=16 (CPU / crypto)
 - **split64:** peak 103.2 Gbps; first knee at N=32 (CPU / crypto)
+- **uni_rings1024:** peak 113.0 Gbps; first knee at N=40 (CPU / crypto)
+- **uni_ringsmax:** peak 103.0 Gbps; first knee at N=40 (CPU / crypto)

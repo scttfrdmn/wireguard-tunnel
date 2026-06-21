@@ -1,0 +1,141 @@
+{
+  "n_tunnels": 32,
+  "mode": "bidir_split",
+  "wg_mtu": 8921,
+  "duration_s": 20,
+  "throughput_gbps": 117.62442492479637,
+  "throughput_gbps_a2b": 52.61665168276846,
+  "throughput_gbps_b2a": 65.00777324202791,
+  "node_a": {
+    "host": "ip-10-10-1-185",
+    "duration_s": 16,
+    "tx_pps": 898485,
+    "busy_cores": 2,
+    "max_core_util": 94.6,
+    "ncores": 192,
+    "busy_core_equiv": 51.61,
+    "cores_gt50": 12,
+    "cores_gt90": 2,
+    "util_band_0_10": 0,
+    "util_band_10_50": 180,
+    "util_band_50_90": 10,
+    "util_band_90_100": 2,
+    "top_threads": [
+      {
+        "comm": "|__iperf3",
+        "pct": 35.5
+      },
+      {
+        "comm": "|__iperf3",
+        "pct": 32.4
+      },
+      {
+        "comm": "|__iperf3",
+        "pct": 30.4
+      },
+      {
+        "comm": "|__napi/wg29-0",
+        "pct": 28.0
+      },
+      {
+        "comm": "|__iperf3",
+        "pct": 26.9
+      },
+      {
+        "comm": "|__iperf3",
+        "pct": 26.8
+      },
+      {
+        "comm": "|__iperf3",
+        "pct": 26.8
+      },
+      {
+        "comm": "|__iperf3",
+        "pct": 26.5
+      }
+    ],
+    "stage_crypt_ce": 36.32,
+    "stage_decrypt_ce": 36.32,
+    "stage_softirq_ce": 6.26,
+    "stage_ksoftirqd_ce": 2.16,
+    "stage_memmgmt_ce": 0.05,
+    "stage_app_ce": 5.90,
+    "stage_app_fio_ce": 0.00,
+    "softirq_rx_top_core_share": 0.060,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 0,
+    "ena_srd_rx_pkts": 0,
+    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_resource_utilization": 0
+  },
+  "node_b": {
+    "host": "ip-10-10-1-162",
+    "duration_s": 16,
+    "tx_pps": 944831,
+    "busy_cores": 4,
+    "max_core_util": 99.9,
+    "ncores": 192,
+    "busy_core_equiv": 58.87,
+    "cores_gt50": 27,
+    "cores_gt90": 4,
+    "util_band_0_10": 0,
+    "util_band_10_50": 165,
+    "util_band_50_90": 23,
+    "util_band_90_100": 4,
+    "top_threads": [
+      {
+        "comm": "|__napi/wg28-0",
+        "pct": 30.7
+      },
+      {
+        "comm": "|__napi/wg8-0",
+        "pct": 29.8
+      },
+      {
+        "comm": "|__napi/wg6-0",
+        "pct": 28.7
+      },
+      {
+        "comm": "|__napi/wg4-0",
+        "pct": 28.4
+      },
+      {
+        "comm": "|__napi/wg9-0",
+        "pct": 27.5
+      },
+      {
+        "comm": "|__napi/wg1-0",
+        "pct": 27.5
+      },
+      {
+        "comm": "|__napi/wg11-0",
+        "pct": 27.4
+      },
+      {
+        "comm": "|__napi/wg13-0",
+        "pct": 27.4
+      }
+    ],
+    "stage_crypt_ce": 23.91,
+    "stage_decrypt_ce": 23.91,
+    "stage_softirq_ce": 5.62,
+    "stage_ksoftirqd_ce": 1.05,
+    "stage_memmgmt_ce": 5.90,
+    "stage_app_ce": 0.00,
+    "stage_app_fio_ce": 0.00,
+    "softirq_rx_top_core_share": 0.048,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 0,
+    "ena_srd_rx_pkts": 0,
+    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_resource_utilization": 0
+  }
+}

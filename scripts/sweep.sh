@@ -43,7 +43,7 @@ for N in $SWEEP; do
 
   # idempotency: clear stale per-flow output so a re-run with a smaller N can't leave
   # orphaned flow*.json files that would inflate the aggregate.
-  rm -f "$outdir"/flow*.json "$outdir"/rev*.json "$outdir/node_a.json" "$outdir/node_b.json"
+  rm -f "$outdir"/flow*.json "$outdir"/wgrev_*.json "$outdir/node_a.json" "$outdir/node_b.json"
 
   # forward A->B: one client per tunnel on A
   pids=(); for i in $(seq 0 $((N-1))); do
@@ -52,14 +52,16 @@ for N in $SWEEP; do
     pids+=($!)
   done
 
-  # reverse B->A (BIDIR only): drive B's clients toward A's reverse servers (bound to .1),
-  # in parallel. Run on B via ssh; JSON comes back over stdout per flow into rev<i>.json.
+  # reverse B->A (BIDIR only): drive B's clients toward A's reverse servers (bound to .1).
+  # Launch ALL reverse clients inside ONE ssh session (background+wait on B), writing per-flow
+  # JSON to /tmp on B — N separate ssh calls would hit sshd MaxSessions (~10) and starve the
+  # remote collect. We scp the rev*.json back after the window.
+  revpid=""
   if [ -n "$BIDIR" ]; then
-    for i in $(seq 0 $((N-1))); do
-      rsrc=$(tun_ip "$i" 2); rdst=$(tun_ip "$i" 1); rport=$((REV_BASE + i))
-      $SSH "iperf3 -c $rdst -B $rsrc -p $rport -t $DUR -P 1 -J" > "$outdir/rev$i.json" 2>/dev/null &
-      pids+=($!)
-    done
+    $SSH "rm -f /tmp/wgrev_*.json; for i in \$(seq 0 $((N-1))); do \
+            iperf3 -c $TUN_NET.\$i.1 -B $TUN_NET.\$i.2 -p \$(($REV_BASE+i)) -t $DUR -P 1 -J \
+              > /tmp/wgrev_\$i.json 2>/dev/null & done; wait" >/dev/null 2>&1 &
+    revpid=$!
   fi
 
   # collect on both nodes during the window (slightly shorter than load)
@@ -70,12 +72,18 @@ for N in $SWEEP; do
   cb=$!
 
   wait "${pids[@]}" || true
+  [ -n "$revpid" ] && { wait "$revpid" 2>/dev/null || true; }
   wait "$ca" "$cb" 2>/dev/null || true
+
+  # pull the reverse per-flow JSON back from B (BIDIR)
+  if [ -n "$BIDIR" ]; then
+    scp -o StrictHostKeyChecking=no -q "ubuntu@${REMOTE_HOST}:/tmp/wgrev_*.json" "$outdir/" 2>/dev/null || true
+  fi
 
   # per-direction aggregate throughput
   gbps_a2b=$(jq -s '[.[].end.sum_sent.bits_per_second]|add/1e9' "$outdir"/flow*.json)
-  if [ -n "$BIDIR" ] && ls "$outdir"/rev*.json >/dev/null 2>&1; then
-    gbps_b2a=$(jq -s '[.[].end.sum_sent.bits_per_second]|add/1e9' "$outdir"/rev*.json 2>/dev/null || echo 0)
+  if [ -n "$BIDIR" ] && ls "$outdir"/wgrev_*.json >/dev/null 2>&1; then
+    gbps_b2a=$(jq -s '[.[].end.sum_sent.bits_per_second]|add/1e9' "$outdir"/wgrev_*.json 2>/dev/null || echo 0)
   else
     gbps_b2a=0
   fi

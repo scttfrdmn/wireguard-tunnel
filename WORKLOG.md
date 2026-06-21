@@ -287,3 +287,31 @@ verified before destroy; terraform destroy complete, key deleted, billing stoppe
 ### Status: KICKOFF headline deliverable achieved (>=100 Gbps, every knee attributed). Remaining
 ### optional: NVMe-over-split workload at 100G; finer split ratios; the original write-up's
 ### remaining "not yet measured" rows if any.
+
+## 2026-06-20 — Session 9: push past 103 — bidirectional ~136 Gbps aggregate (run 7)
+
+Plan-mode review: corrected two of my framings (encrypt≈decrypt crypto cost, NOT 1/4; no
+single 180 aggregate cap — in/out metered separately). Built offline: nic-tune.sh (offload/ring
+A/B), sweep.sh BIDIR=1 (paired opposing flows), server-up forward|reverse|both, collect
+stage_crypt relabel, report bidirectional table. Committed offline build, then ran live.
+
+Run 7 (us-west-2d Spot, N_MAX=64, IRQ_SPLIT on BOTH nodes — both are receivers now):
+- OFFLOAD lever DEAD on ENA: GSO/GRO already on; tx-udp-segmentation [fixed] off; RX ring
+  1024->8192 didn't help (113->103 unidir). Per-byte cost not reducible; placement is the lever.
+- Unidir re-baseline 113 Gbps N=40 (warmer instance than run-6's 103).
+- BIDIRECTIONAL node-split: N=32 117.6 / N=48 **136.2** / N=64 112.5 Gbps aggregate. PEAK ~136.
+  No allowance fired (bw_in/out/pps=0 both nodes); node A CPU-saturated 100%. Wall = aggregate
+  CPU, never network. Confirms no single 180 aggregate cap.
+- HARNESS BUG found+fixed: sweep.sh BIDIR launched N parallel ssh reverse-clients -> hit sshd
+  MaxSessions ~10 -> starved remote collect -> N>=40 datapoint crashed. Fixed: all reverse
+  clients in ONE ssh session, scp rev json back. (The live higher-N points were gathered via a
+  manual single-ssh workaround; N=32 has the committed full-attribution datapoint.)
+
+Pulled clean datapoints (uni baselines + bidir N=32 full attribution); higher-N per-direction
+numbers recorded in write-up as measured-via-direct-iperf. report 72 dp/23 modes. terraform
+destroy complete, key deleted, billing stopped. ~50 min, <$8.
+
+### Status: KICKOFF fully answered — proved >=100 (103 unidir) AND pushed to the wall (~136
+### bidir aggregate), wall attributed to aggregate ChaCha20 CPU (not the 180 network allowance).
+### Remaining optional: symmetric BIDIR=1 re-sweep (now bug-fixed) for clean per-N datapoints;
+### explicit cross-core pipelining.

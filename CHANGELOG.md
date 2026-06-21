@@ -10,6 +10,20 @@ schema, report columns) may change between minor versions.
 
 ## [Unreleased]
 
+### Added
+- **Run 7 — pushed past 103 to ~136 Gbps aggregate wire (bidirectional).** Paired opposing
+  node-split flows: N=32 117.6 / N=48 **136.2** / N=64 112.5 Gbps aggregate (A→B + B→A). No AWS
+  allowance fired at any point (in/out metered separately, ~180 each — no single aggregate cap);
+  the wall is aggregate ChaCha20 CPU across 192 cores. Also established that **ENA per-packet
+  offloads are a dead end**: GSO/GRO already on, `tx-udp-segmentation` fixed-off, larger RX rings
+  don't help when CPU-bound.
+- **`nic-tune.sh`** (new): probe/on/off ENA offloads (`ethtool -K`) + ring depth (`-G`).
+- **`sweep.sh BIDIR=1`**: paired opposing A→B + B→A flows (not iperf3 `--bidir`), per-direction
+  aggregation; reverse clients launched in a single SSH session (avoids sshd MaxSessions
+  starving the remote collect — the bug that crashed the first N≥40 attempt). `server-up.sh`
+  gained `forward|reverse|both`. `report` shows a bidirectional table (a2b/b2a/aggregate +
+  allowance-fired verdict). `collect.sh` `wg-crypt` relabeled `stage_crypt` (encrypt OR decrypt).
+
 ## [0.3.0] - 2026-06-20
 
 **Project goal met: ≥100 Gbps of encrypted WireGuard throughput, measured.** Node-split
