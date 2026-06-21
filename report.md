@@ -111,6 +111,13 @@
 | split64 | 64 | 103.1 | - | 26.0/89.5 | 1.15 | 21/100 | 0 | CPU / crypto |
 | uni_rings1024 | 40 | 113.0 | - | 29.0/70.9 | 1.59 | 47/99 | 0 | CPU / crypto |
 | uni_ringsmax | 40 | 103.0 | - | 26.2/81.6 | 1.26 | 22/100 | 0 | CPU / crypto |
+| uni_split | 32 | 102.4 | - | 29.1/67.1 | 1.53 | 37/100 | 0 | CPU / crypto |
+| uni_split | 40 | 92.7 | - | 24.9/77.4 | 1.20 | 21/100 | 0 | CPU / crypto |
+| uni_split | 48 | 88.6 | - | 23.2/85.5 | 1.04 | 19/100 | 0 | CPU / crypto |
+| uni_split | 64 | 90.0 | - | 23.3/97.5 | 0.92 | 23/100 | 0 | CPU / crypto |
+| uni_split | 96 | 111.0 | - | 26.9/0.0 | 4.13 | 27/0 | 0 | linear region (unbound) |
+| uni_split | 128 | 108.9 | - | 27.1/0.0 | 4.02 | 28/0 | 0 | linear region (unbound) |
+| uni_split96 | 96 | 114.8 | - | 29.1/0.0 | 3.95 | 26/0 | 0 | linear region (unbound) |
 
 ## Bidirectional (aggregate wire = A→B + B→A)
 | mode | N | aggregate Gbps | A→B | B→A | core-equiv (A/B) | max util (A/B) | allowance fired? |
@@ -192,6 +199,13 @@
 | split64 | 64 | |__pidstat:12 |__napi/wg59-0:11 |__napi/wg57-0:11 |__napi/wg62-0:11 | |__iperf3:23 |__napi/wg32-0:15 |__ksoftirqd/109:12 |__ksoftirqd/104:12 |
 | uni_rings1024 | 40 | |__napi/wg29-0:20 |__napi/wg31-0:20 |__napi/wg28-0:20 |__napi/wg24-0:19 | |__iperf3:39 |__napi/wg32-0:10 |__kworker/11:1-wg-crypt-wg10:8 |__pidstat:7 |
 | uni_ringsmax | 40 | |__napi/wg33-0:20 |__napi/wg31-0:18 |__napi/wg29-0:18 |__napi/wg34-0:18 | |__iperf3:36 |__ksoftirqd/111:11 |__kworker/8:1-wg-crypt-wg32:11 |__kworker/15:3-wg-crypt-wg32:10 |
+| uni_split | 32 | |__napi/wg29-0:25 |__napi/wg2-0:25 |__napi/wg30-0:24 |__napi/wg28-0:24 | |__ksoftirqd/9:16 |__ksoftirqd/8:15 |__ksoftirqd/1:15 |__ksoftirqd/104:15 |
+| uni_split | 40 | |__napi/wg38-0:17 |__napi/wg39-0:16 |__napi/wg32-0:15 |__napi/wg28-0:15 | |__kworker/3:4-wg-crypt-wg39:10 |__kworker/3:5-wg-crypt-wg38:10 |__ksoftirqd/9:9 |__kworker/12:5-wg-crypt-wg35:9 |
+| uni_split | 48 | |__napi/wg39-0:13 |__napi/wg46-0:12 |__napi/wg38-0:12 |__pidstat:12 | |__kworker/8:3-wg-crypt-wg115:12 |__kworker/12:0-wg-crypt-wg34:10 |__kworker/5:2-mm_percpu_wq:10 |__kworker/10:0-wg-crypt-wg47:9 |
+| uni_split | 64 | |__pidstat:13 |__napi/wg39-0:10 |__napi/wg38-0:9 |__napi/wg51-0:8 | |__kworker/3:4-wg-crypt-wg27:10 |__kworker/9:2-wg-crypt-wg62:10 |__kworker/7:4-mm_percpu_wq:10 |__kworker/5:8-mm_percpu_wq:10 |
+| uni_split | 96 | |__pidstat:13 |__napi/wg81-0:8 |__napi/wg93-0:7 |__napi/wg89-0:7 | - |
+| uni_split | 128 | |__pidstat:14 |__kworker/92:0-wg-crypt-wg91:6 |__kworker/111:0+wg-crypt-wg91:6 |__napi/wg81-0:6 | - |
+| uni_split96 | 96 | |__pidstat:13 |__napi/wg43-0:8 |__napi/wg73-0:7 |__napi/wg77-0:7 | - |
 
 ## Receiver stage cost (core-equivalents: dec=decrypt sirq=napi ksd=ksoftirqd mm=mm_percpu_wq app=iperf3)
 | mode | N | Gbps | receiver (node B) stage breakdown |
@@ -216,6 +230,20 @@
 | split64 | 64 | 103.1 | dec=21.4 sirq=1.9 ksd=1.4 mm=1.6 app=0.2 |
 | uni_rings1024 | 40 | 113.0 | dec=12.2 sirq=0.9 ksd=0.8 mm=3.3 app=0.4 |
 | uni_ringsmax | 40 | 103.0 | dec=23.8 sirq=1.5 ksd=1.1 mm=6.5 app=0.4 |
+| uni_split | 32 | 102.4 | dec=24.1 sirq=2.0 ksd=1.7 mm=3.5 app=0.0 |
+| uni_split | 40 | 92.7 | dec=24.8 sirq=1.6 ksd=1.1 mm=5.1 app=0.0 |
+| uni_split | 48 | 88.6 | dec=24.1 sirq=1.4 ksd=0.8 mm=6.5 app=0.0 |
+| uni_split | 64 | 90.0 | dec=25.6 sirq=1.5 ksd=0.7 mm=7.9 app=0.0 |
+
+## Unidirectional limit analysis (receiver = node B)
+| mode | N | Gbps | rx_gbps | coreEq | kernel(soft+sys) | usr | per-flow Gbps cv | rxq cv | binding |
+|------|---|------|---------|--------|------------------|-----|------------------|--------|---------|
+| uni_split | 32 | 102.4 | 62.9 | 67.1 | 67.0 | 0.1 | 0.468 | 1.04 | CPU / crypto |
+| uni_split | 40 | 92.7 | 55.3 | 77.4 | 77.3 | 0.0 | 0.367 | 0.71 | CPU / crypto |
+| uni_split | 48 | 88.6 | 50.0 | 85.5 | 85.4 | 0.0 | 0.329 | 0.44 | CPU / crypto |
+| uni_split | 64 | 90.0 | 49.8 | 97.5 | 97.4 | 0.1 | 0.351 | 0.38 | CPU / crypto |
+
+_kernel(soft+sys) ≫ named stages ⇒ the cost is un-offloadable per-packet stack work; low rxq cv ⇒ RSS even (not a hot-queue problem); per-flow cv stable while Gbps flat ⇒ aggregate-CPU-limited._
 
 ## Per-mode summary
 - **align:** peak 79.3 Gbps; first knee at N=16 (CPU / crypto)
@@ -241,3 +269,5 @@
 - **split64:** peak 103.2 Gbps; first knee at N=32 (CPU / crypto)
 - **uni_rings1024:** peak 113.0 Gbps; first knee at N=40 (CPU / crypto)
 - **uni_ringsmax:** peak 103.0 Gbps; first knee at N=40 (CPU / crypto)
+- **uni_split:** peak 111.0 Gbps; first knee at N=32 (CPU / crypto)
+- **uni_split96:** peak 114.8 Gbps; no knee reached (stayed in the linear region — add tunnels)

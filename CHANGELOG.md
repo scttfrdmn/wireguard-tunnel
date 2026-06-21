@@ -10,6 +10,19 @@ schema, report columns) may change between minor versions.
 
 ## [Unreleased]
 
+### Added
+- **Run 9 — the unidirectional A→B limit, exposed and explained.** Best A→B ≈ **111–115 Gbps**
+  (node-split, N=96). New `collect.sh` instrumentation (per-core `kernel(soft+sys)` vs `usr`
+  core-equivalents, per-RX-queue byte CV, per-flow rate CV, wire `rx_gbps`) proves the wall is
+  **aggregate per-packet receive CPU**: at the cap the receiver is ~100% kernel softirq+sys
+  (userspace **0%**), per-queue CV falls 1.04→0.38 (RSS even, no hot queue), no allowance fired.
+  Not the network, not RSS, not the app — diminishing returns exhausted past N≈32. ~115 Gbps is
+  the A→B wall on i8ge.48xlarge; raising it needs hardware UDP-GSO (ENA `[fixed]` off) or fewer
+  packets/Gbps (jumbo already maxed). Report gains a "Unidirectional limit analysis" table.
+- **`SINK=devnull`** (socat) path in `sweep.sh`/`server-up.sh` to A/B iperf3 vs a raw sink
+  (moot here since userspace cost measured ≈0; the socat-over-tunnel path had a reliability
+  issue, not pursued). `node-setup.sh` installs `socat`.
+
 ## [0.4.0] - 2026-06-20
 
 **Pushed past 100 to the real wall: 148.4 Gbps aggregate wire (bidirectional).** Beyond the

@@ -1,0 +1,88 @@
+{
+  "n_tunnels": 96,
+  "mode": "uni_split",
+  "sink": "iperf3",
+  "wg_mtu": 8921,
+  "duration_s": 20,
+  "throughput_gbps": 111.01398323387016,
+  "throughput_gbps_a2b": 111.01398323387016,
+  "throughput_gbps_b2a": 0,
+  "flow_gbps_min": 0.21502651744299253,
+  "flow_gbps_median": 1.1098550290756173,
+  "flow_gbps_max": 7.88061661188433,
+  "flow_gbps_cv": 0.7192405179169062,
+  "node_a": {
+    "host": "ip-10-10-1-239",
+    "duration_s": 16,
+    "tx_pps": 1435434,
+    "rx_gbps": 0.066,
+    "busy_cores": 0,
+    "max_core_util": 26.7,
+    "ncores": 192,
+    "busy_core_equiv": 26.85,
+    "core_equiv_softsys": 26.72,
+    "core_equiv_usr": 0.12,
+    "cores_gt50": 0,
+    "cores_gt90": 0,
+    "util_band_0_10": 0,
+    "util_band_10_50": 192,
+    "util_band_50_90": 0,
+    "util_band_90_100": 0,
+    "top_threads": [
+      {
+        "comm": "|__pidstat",
+        "pct": 13.1
+      },
+      {
+        "comm": "|__napi/wg81-0",
+        "pct": 7.6
+      },
+      {
+        "comm": "|__napi/wg93-0",
+        "pct": 7.3
+      },
+      {
+        "comm": "|__napi/wg89-0",
+        "pct": 7.0
+      },
+      {
+        "comm": "|__napi/wg84-0",
+        "pct": 6.8
+      },
+      {
+        "comm": "|__napi/wg85-0",
+        "pct": 6.7
+      },
+      {
+        "comm": "|__napi/wg87-0",
+        "pct": 6.7
+      },
+      {
+        "comm": "|__napi/wg91-0",
+        "pct": 6.6
+      }
+    ],
+    "stage_crypt_ce": 20.73,
+    "stage_decrypt_ce": 20.73,
+    "stage_softirq_ce": 3.15,
+    "stage_ksoftirqd_ce": 0.15,
+    "stage_memmgmt_ce": 0.05,
+    "stage_app_ce": 2.32,
+    "stage_app_fio_ce": 0.00,
+    "softirq_rx_top_core_share": 0.053,
+    "softirq_active_queues": 31,
+    "rxq_count": 32,
+    "rxq_bytes_cv": 0.619,
+    "rxq_max_over_mean": 1.76,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 0,
+    "ena_srd_rx_pkts": 0,
+    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_resource_utilization": 0
+  },
+  "node_b": null
+}

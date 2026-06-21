@@ -1,0 +1,160 @@
+{
+  "n_tunnels": 48,
+  "mode": "uni_split",
+  "sink": "iperf3",
+  "wg_mtu": 8921,
+  "duration_s": 20,
+  "throughput_gbps": 88.59852006758008,
+  "throughput_gbps_a2b": 88.59852006758008,
+  "throughput_gbps_b2a": 0,
+  "flow_gbps_min": 0.7999213480208194,
+  "flow_gbps_median": 2.084521668212093,
+  "flow_gbps_max": 2.5351328304124063,
+  "flow_gbps_cv": 0.328934520956515,
+  "node_a": {
+    "host": "ip-10-10-1-239",
+    "duration_s": 16,
+    "tx_pps": 1251081,
+    "rx_gbps": 0.048,
+    "busy_cores": 0,
+    "max_core_util": 19.1,
+    "ncores": 192,
+    "busy_core_equiv": 23.18,
+    "core_equiv_softsys": 23.08,
+    "core_equiv_usr": 0.10,
+    "cores_gt50": 0,
+    "cores_gt90": 0,
+    "util_band_0_10": 3,
+    "util_band_10_50": 189,
+    "util_band_50_90": 0,
+    "util_band_90_100": 0,
+    "top_threads": [
+      {
+        "comm": "|__napi/wg39-0",
+        "pct": 12.6
+      },
+      {
+        "comm": "|__napi/wg46-0",
+        "pct": 12.3
+      },
+      {
+        "comm": "|__napi/wg38-0",
+        "pct": 12.3
+      },
+      {
+        "comm": "|__pidstat",
+        "pct": 12.1
+      },
+      {
+        "comm": "|__napi/wg47-0",
+        "pct": 11.4
+      },
+      {
+        "comm": "|__napi/wg33-0",
+        "pct": 11.1
+      },
+      {
+        "comm": "|__napi/wg20-0",
+        "pct": 11.0
+      },
+      {
+        "comm": "|__napi/wg32-0",
+        "pct": 10.6
+      }
+    ],
+    "stage_crypt_ce": 17.53,
+    "stage_decrypt_ce": 17.53,
+    "stage_softirq_ce": 3.36,
+    "stage_ksoftirqd_ce": 0.09,
+    "stage_memmgmt_ce": 0.00,
+    "stage_app_ce": 2.05,
+    "stage_app_fio_ce": 0.00,
+    "softirq_rx_top_core_share": 0.061,
+    "softirq_active_queues": 26,
+    "rxq_count": 32,
+    "rxq_bytes_cv": 1.155,
+    "rxq_max_over_mean": 3.14,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 0,
+    "ena_srd_rx_pkts": 0,
+    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_resource_utilization": 0
+  },
+  "node_b": {
+    "host": "ip-10-10-1-153",
+    "duration_s": 16,
+    "tx_pps": 27446,
+    "rx_gbps": 49.960,
+    "busy_cores": 38,
+    "max_core_util": 100.0,
+    "ncores": 192,
+    "busy_core_equiv": 85.46,
+    "core_equiv_softsys": 85.41,
+    "core_equiv_usr": 0.04,
+    "cores_gt50": 62,
+    "cores_gt90": 38,
+    "util_band_0_10": 0,
+    "util_band_10_50": 130,
+    "util_band_50_90": 24,
+    "util_band_90_100": 38,
+    "top_threads": [
+      {
+        "comm": "|__kworker/8:3-wg-crypt-wg115",
+        "pct": 11.5
+      },
+      {
+        "comm": "|__kworker/12:0-wg-crypt-wg34",
+        "pct": 10.5
+      },
+      {
+        "comm": "|__kworker/5:2-mm_percpu_wq",
+        "pct": 9.6
+      },
+      {
+        "comm": "|__kworker/10:0-wg-crypt-wg47",
+        "pct": 9.4
+      },
+      {
+        "comm": "|__kworker/11:0-wg-crypt-wg10",
+        "pct": 9.2
+      },
+      {
+        "comm": "|__kworker/3:2-mm_percpu_wq",
+        "pct": 9.2
+      },
+      {
+        "comm": "|__kworker/2:5-wg-crypt-wg14",
+        "pct": 9.0
+      },
+      {
+        "comm": "|__kworker/10:4-wg-crypt-wg9",
+        "pct": 8.7
+      }
+    ],
+    "stage_crypt_ce": 24.14,
+    "stage_decrypt_ce": 24.14,
+    "stage_softirq_ce": 1.41,
+    "stage_ksoftirqd_ce": 0.79,
+    "stage_memmgmt_ce": 6.51,
+    "stage_app_ce": 0.00,
+    "stage_app_fio_ce": 0.00,
+    "softirq_rx_top_core_share": 0.051,
+    "softirq_active_queues": 29,
+    "rxq_count": 32,
+    "rxq_bytes_cv": 0.442,
+    "rxq_max_over_mean": 1.68,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 0,
+    "ena_srd_rx_pkts": 0,
+    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_resource_utilization": 0
+  }
+}

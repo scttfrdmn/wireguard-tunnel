@@ -1,0 +1,88 @@
+{
+  "n_tunnels": 128,
+  "mode": "uni_split",
+  "sink": "iperf3",
+  "wg_mtu": 8921,
+  "duration_s": 20,
+  "throughput_gbps": 108.87310537627563,
+  "throughput_gbps_a2b": 108.87310537627563,
+  "throughput_gbps_b2a": 0,
+  "flow_gbps_min": 0.12025259582381541,
+  "flow_gbps_median": 0.7856847030745879,
+  "flow_gbps_max": 7.88340098422452,
+  "flow_gbps_cv": 0.8467877952961145,
+  "node_a": {
+    "host": "ip-10-10-1-239",
+    "duration_s": 16,
+    "tx_pps": 1407587,
+    "rx_gbps": 0.092,
+    "busy_cores": 0,
+    "max_core_util": 27.5,
+    "ncores": 192,
+    "busy_core_equiv": 27.07,
+    "core_equiv_softsys": 26.94,
+    "core_equiv_usr": 0.13,
+    "cores_gt50": 0,
+    "cores_gt90": 0,
+    "util_band_0_10": 0,
+    "util_band_10_50": 192,
+    "util_band_50_90": 0,
+    "util_band_90_100": 0,
+    "top_threads": [
+      {
+        "comm": "|__pidstat",
+        "pct": 13.8
+      },
+      {
+        "comm": "|__kworker/92:0-wg-crypt-wg91",
+        "pct": 5.8
+      },
+      {
+        "comm": "|__kworker/111:0+wg-crypt-wg91",
+        "pct": 5.6
+      },
+      {
+        "comm": "|__napi/wg81-0",
+        "pct": 5.5
+      },
+      {
+        "comm": "|__kworker/100:3-wg-crypt-wg41",
+        "pct": 5.3
+      },
+      {
+        "comm": "|__napi/wg89-0",
+        "pct": 5.2
+      },
+      {
+        "comm": "|__napi/wg85-0",
+        "pct": 5.2
+      },
+      {
+        "comm": "|__kworker/95:0-wg-crypt-wg87",
+        "pct": 5.2
+      }
+    ],
+    "stage_crypt_ce": 20.88,
+    "stage_decrypt_ce": 20.88,
+    "stage_softirq_ce": 3.35,
+    "stage_ksoftirqd_ce": 0.16,
+    "stage_memmgmt_ce": 0.02,
+    "stage_app_ce": 2.28,
+    "stage_app_fio_ce": 0.00,
+    "softirq_rx_top_core_share": 0.049,
+    "softirq_active_queues": 32,
+    "rxq_count": 32,
+    "rxq_bytes_cv": 0.389,
+    "rxq_max_over_mean": 1.65,
+    "bw_in_allowance_exceeded": 0,
+    "bw_out_allowance_exceeded": 0,
+    "pps_allowance_exceeded": 0,
+    "conntrack_allowance_exceeded": 0,
+    "linklocal_allowance_exceeded": 0,
+    "ena_srd_tx_pkts": 0,
+    "ena_srd_rx_pkts": 0,
+    "ena_srd_eligible_tx_pkts": 0,
+    "ena_srd_resource_utilization": 0
+  },
+  "node_b": null
+}

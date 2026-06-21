@@ -331,3 +331,31 @@ Clean symmetric BIDIR=1 sweep exercising the bug-fixed single-ssh reverse path:
 ### PROJECT COMPLETE. KICKOFF fully delivered: >=100 Gbps proven (103 unidir), pushed to the
 ### wall (148 bidir aggregate), every knee attributed, wall = aggregate ChaCha20 CPU not the
 ### 180 Gbps network allowance. Harness shellcheck/go clean; results + write-up + plots committed.
+
+## 2026-06-21 — Session 11: unidirectional A->B limit exposed & explained (run 9)
+
+User refocused: ONLY A->B matters (bidir aggregate is a different premise). Goal = find the
+A->B wall, prove diminishing returns exhausted, explain WHY.
+
+Built instrumentation offline (committed): collect.sh per-core kernel(soft+sys) vs usr
+core-equiv + per-RX-queue byte cv + per-flow rate cv + wire rx_gbps; sweep.sh per-flow
+distribution + SINK=devnull (socat); server-up devnull sinks; report "Unidirectional limit
+analysis" table. shellcheck/go clean, backward-compatible.
+
+Run 9 (us-west-2d Spot, N_MAX=128, pure A->B):
+- Best A->B ~111-115 Gbps (N=96). Curve non-monotonic 102/93/89/90/111-115/109 — ceiling ~110-115.
+- THE EXPLANATION: receiver busy CPU is ~100% KERNEL softirq+sys, USERSPACE=0% (N=32 coreEq 67.1
+  = kernel 67.0, usr 0.06; N=64 coreEq 97.4 all kernel). The "missing core-equiv" from prior runs
+  = un-threaded per-packet receive-stack work (NAPI/GRO/TCP/decrypt-in-softirq). pidstat couldn't
+  name it; the mpstat class split does.
+- Ruled out: app (usr~0, devnull moot), RSS hot-queue (rxq cv 1.04->0.38 = spreads BETTER),
+  network (bw/pps=0, raw ENA 205). Wall = aggregate per-packet receive CPU; offload levers dead.
+- WALL: ~115 Gbps A->B on i8ge.48xlarge. To exceed needs hw UDP-GSO (ENA fixed-off) or fewer
+  packets/Gbps (jumbo maxed). Diminishing returns exhausted.
+- Caveat: collect-over-ssh null at N=96/128 (starved when B slammed by 96+ flows); throughput
+  clean, attribution clean at N<=64 (proves the story).
+
+Pulled datapoints, verified, terraform destroy complete, key deleted, billing stopped. <$8.
+Updated write-up (leads with the A->B result now), CHANGELOG, memory.
+
+### A->B answer documented: ~115 Gbps, per-packet receive-CPU bound, fully attributed.
